@@ -1,36 +1,23 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Up Voice Assistant
 
-## Getting Started
+Using voice agents this project allows users to interact with:
 
-First, run the development server:
+- Up Bank's public facing content;
+- Their own personal banking information via the Open Banking API.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Public Facing Interface
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Tasks:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Scrape all relevant information from Up Bank's website
+2. Store this either in a context file or vector DB
+3. Connect this a voice agent - perhaps ElevenLabs
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Customer-Specific Interface
 
-## Learn More
+Tasks:
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Connect API to Up Bank for testing
+2. What APIs would I need to enable for full coverage with the llm?
+3. What approach are we going to take?
+   i.e. Query all information at the begining and store this in state for the LLM to access vs. Allow pathway/agent to query APIs as needed.
