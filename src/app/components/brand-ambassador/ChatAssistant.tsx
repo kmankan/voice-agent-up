@@ -52,15 +52,15 @@ const VoiceBankingAssistant = () => {
     setIsLoading(true);
     try {
       console.log('question:', question);
-      const response = await fetch('/api/ask', {
+      const response = await fetch('http://localhost:3000/chat/message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ message: question }),
       });
 
       const data = await response.json();
-      if (data.answer) {
-        simulateStreaming(data.answer);
+      if (data.response) {
+        simulateStreaming(data.response);
       }
     } catch (error) {
       console.error('Error:', error);
