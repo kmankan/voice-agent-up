@@ -14,6 +14,8 @@ export async function POST(req: Request) {
     }
 
     const answer = await generateAnswer(question);
+    console.log('question:', question);
+    console.log('answer:', answer);
     
     return NextResponse.json({ answer });
   } catch (error) {

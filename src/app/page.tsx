@@ -1,12 +1,9 @@
-import Image from "next/image";
-import VoiceBankingAssistant from "./components/VoiceAssistant"
-import Conversation from "./components/ElevenLabs"
+import VoiceBankingAssistant from "./components/brand-ambassador/ChatAssistant"
 
 export default function Home() {
   return (
     <>
       <VoiceBankingAssistant />
-      <Conversation />
     </>
   );
 }
