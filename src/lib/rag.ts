@@ -1,11 +1,10 @@
 // rag.ts
 import { searchSimilarDocuments } from './db';
 import Anthropic from '@anthropic-ai/sdk';
-import { db } from './db';
 
 export async function generateAnswer(question: string): Promise<string> {
   // 1. Find relevant documents using db.ts
-  const similarDocs = await searchSimilarDocuments(question, 3);
+  const similarDocs = await searchSimilarDocuments(question, 7);
   
   // 2. Format context
   const context = similarDocs
@@ -30,8 +29,7 @@ Please follow these guidelines:
 - If the context doesn't contain enough information to fully answer the question, acknowledge this limitation
 - Keep responses clear and concise (4 sentences max)
 - If you're unsure about any part of your answer, express that uncertainty
-- Do not make assumptions or provide information beyond what's in the context
-- When referencing information, cite the source documents at the end of your response`
+- Do not make assumptions or provide information beyond what's in the context`
       },
       {
         role: 'user',
@@ -39,16 +37,10 @@ Please follow these guidelines:
       }
     ],
     max_tokens: 500,
-    temperature: 0.7,
+    temperature: 0.6,
   });
 
   // Check if the first content block has a 'text' property
   const firstContent = completion.content[0];
   return 'text' in firstContent ? firstContent.text : 'Unable to generate answer';
 }
-
-const answer = await generateAnswer('what is 2up?');
-console.log('answer:', answer);
-
-// Add this line to close the database connection
-await db.end();

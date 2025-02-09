@@ -1,5 +1,5 @@
 // lib/db.ts
-import { Client } from 'pg';
+import { db } from '@vercel/postgres';
 import { OpenAI } from 'openai';
 import { createChunks } from './chunking';
 
@@ -19,21 +19,10 @@ interface SearchResult {
   similarity: number;
 }
 
-// Initialize database connection
-export const db = new Client({
-  connectionString: process.env.DATABASE_URL
-});
-
-// Connect on import
-db.connect().catch(console.error);
-
 // Initialize OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
-
-// Add this constant at the top with other configurations
-const EMBEDDING_TOKEN_LIMIT = 8191; // OpenAI's limit for text-embedding-3-small
 
 // Format embedding array for pgvector
 function formatEmbeddingForPostgres(embedding: number[]): string {
@@ -43,11 +32,12 @@ function formatEmbeddingForPostgres(embedding: number[]): string {
 // Setup database schema
 export async function setupDatabase() {
   try {
+    const client = await db.connect();
     // Enable vector extension
-    await db.query('CREATE EXTENSION IF NOT EXISTS vector');
+    await client.query('CREATE EXTENSION IF NOT EXISTS vector');
     
     // Create documents table with embeddings
-    await db.query(`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS documents (
         id SERIAL PRIMARY KEY,
         content TEXT NOT NULL,
@@ -63,7 +53,7 @@ export async function setupDatabase() {
     `);
 
     // Set optimal parameters for indexing
-    await db.query(`
+    await client.query(`
       SET maintenance_work_mem = '1GB';
       SET max_parallel_maintenance_workers = 2;
     `);
@@ -78,13 +68,6 @@ export async function setupDatabase() {
 // Generate embeddings using OpenAI
 export async function generateEmbedding(text: string): Promise<number[]> {
   try {
-    // Add basic token estimation (approx 4 chars per token)
-    const estimatedTokens = Math.ceil(text.length / 4);
-    
-    if (estimatedTokens > EMBEDDING_TOKEN_LIMIT) {
-      throw new Error(`Text too long for embedding: ~${estimatedTokens} tokens (limit: ${EMBEDDING_TOKEN_LIMIT})`);
-    }
-    
     const response = await openai.embeddings.create({
       model: 'text-embedding-3-small',
       input: text,
@@ -103,10 +86,11 @@ export async function storeDocument(
   metadata: DocumentMetadata
 ): Promise<void> {
   try {
+    const client = await db.connect();
     const embedding = await generateEmbedding(content);
     const formattedEmbedding = formatEmbeddingForPostgres(embedding);
     
-    await db.query(
+    await client.query(
       `INSERT INTO documents (content, metadata, embedding) 
        VALUES ($1, $2, $3)`,
       [content, metadata, formattedEmbedding]
@@ -123,10 +107,11 @@ export async function searchSimilarDocuments(
   limit: number = 5
 ): Promise<SearchResult[]> {
   try {
+    const client = await db.connect();
     const queryEmbedding = await generateEmbedding(query);
     const formattedEmbedding = formatEmbeddingForPostgres(queryEmbedding);
     
-    const result = await db.query(
+    const result = await client.query(
       `SELECT 
         content,
         metadata,
@@ -136,19 +121,13 @@ export async function searchSimilarDocuments(
        LIMIT $2`,
       [formattedEmbedding, limit]
     );
-    
+    console.log('results',result.rows);
     return result.rows;
   } catch (error) {
     console.error('Error searching similar documents:', error);
     throw error;
   }
 }
-
-// Clean up on app termination
-process.on('SIGTERM', async () => {
-  await db.end();
-  process.exit(0);
-});
 
 // RAG Pipeline
 export async function generateAnswer(question: string): Promise<string> {
@@ -188,44 +167,19 @@ export async function generateAnswer(question: string): Promise<string> {
   }
 }
 
+// Index documents
 export async function indexDocuments(texts: { content: string; source: string }[]) {
   try {
-    // Process all documents in parallel with controlled concurrency
-    await Promise.all(texts.map(async ({ content, source }) => {
-      const chunks = createChunks(content, source, undefined, {
-        maxChunkSize: 6000, // ~1500 tokens to be safe
-        minChunkSize: 100,
-        headerMaxLength: 50
-      });
+    for (const { content, source } of texts) {
+      // Split content into smaller chunks
+      const chunks = createChunks(content, source);
       
-      // Batch insert chunks for each document
-      const values = chunks.map((chunk, index) => ({
-        content: chunk.content,
-        metadata: {
-          ...chunk.metadata,
-          chunk_index: index,
-          total_chunks: chunks.length
-        }
-      }));
-
-      // Use a single transaction for all chunks of a document
-      await db.query('BEGIN');
-      try {
-        await Promise.all(values.map(async ({ content, metadata }) => {
-          const embedding = await generateEmbedding(content);
-          await db.query(
-            `INSERT INTO documents (content, metadata, embedding) 
-             VALUES ($1, $2, $3)`,
-            [content, metadata, formatEmbeddingForPostgres(embedding)]
-          );
-        }));
-        await db.query('COMMIT');
-        console.log(`✓ Indexed ${chunks.length} chunks from ${source}`);
-      } catch (error) {
-        await db.query('ROLLBACK');
-        throw error;
+      for (const chunk of chunks) {
+        await storeDocument(chunk.content, chunk.metadata);
       }
-    }));
+      
+      console.log(`Indexed document: ${source}`);
+    }
   } catch (error) {
     console.error('Error indexing documents:', error);
     throw error;
