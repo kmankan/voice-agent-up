@@ -1,0 +1,3836 @@
+Calling all makers, creators, hackers, and hobbyists.
+Welcome to the first stage of Up’s API: a beta release that gives you programmatic access to your balances and transaction data. You can request past transactions or set up webhooks to receive real time events when new transactions hit your account. It’s new, exciting and just the beginning.
+This time it's personal
+This first phase of the API is designed to give you (and only you) access to your personal data. Get a Personal Access Token that can then be used to make secure requests from our API. Read the docs below to see what you can ask for and the sorts of responses you can expect. In the future we’ll be expanding our API to allow developers to create applications or integrations other customers can use.
+Getting started with our API
+Before you start
+It’s true, working with an API is going to require some programming knowledge. It also helps to be familiar with a console/terminal. In the examples below we’re going to provide terminal commands you can run on your computer. It doesn’t really matter what programming language you choose, but if you don’t yet know any, consider Rails or Javascript. There’s a ton of online material available to help you learn and great communities to join.
+Sign-up if you're not a customer
+It takes just a couple of steps to get up and running. If you’re not yet an Upsider the first thing you’ll need to do is sign up here: https://up.com.au/download/. Great! Let’s go to the next step.
+
+Rotating logo
+Claim your Personal Access Token
+Your personal access token is the key to your financial kingdom. Guard it fiercely and never share it online or give it out. If you are worried it may have fallen into the wrong hands it’s easy to generate a new one (and expire the old one) - see below.
+
+Steps to claim
+1. Open the Up app on your phone, swipe right and select "Data sharing".
+
+2. Tap on ‘Personal Access Token’.
+
+3. Select ‘Generate a token’.
+
+4. Select how long you would like the token to last.
+
+5. Follow the prompts to generate your token
+
+6. Presto! You now have a Personal Access Token. Copy this and store it safely.
+
+Head over to https://api.up.com.au for an alternative way to claim your access token.
+
+Managing your Personal Access Token
+Reissuing your Personal Access Token
+1. Open the Up app, swipe right and select "Data sharing".
+
+2. Tap on ‘Personal Access Token’.
+
+3. Tap ‘Generate a token’ and follow the prompts.
+
+Revoking your Personal Access Token
+1. Open the Up app, swipe right and select "Data sharing"
+
+2. Tap on ‘Personal Access Token’.
+
+3. Tap ‘Revoke existing token’ and select confirm
+
+Rotating logo
+Make your first API Request
+Ok let's get our hands dirty! The simplest request in the book is to first verify that your token works.
+
+Verify the access token
+To test your access token, make a request to the /util/ping endpoint. You'll need to put your access token in the Authorization header like so:
+
+
+Authorization: Bearer $your_access_token
+
+Replace $your_access_token with your personal access token.
+
+You should get a JSON response with a HTTP 200 status.
+
+Sample Request
+
+
+curl https://api.up.com.au/api/v1/util/ping \
+  -H "Authorization: Bearer $your_access_token"
+
+Sample Response
+
+
+{
+  "meta": {
+    "id": "3b5d17a4-6778-48dc-ae7d-9f8aace2e2fc",
+    "statusEmoji": "⚡️"
+  }
+}
+
+If the Authorization header is missing, is malformed, or contains an invalid access token, an error response will be returned with a HTTP 401 status.
+
+URL Structure
+The Up Banking API is versioned so that breaking changes can be made without impacting existing clients. The current version is v1 (beta). New endpoints will be added over time and existing endpoints will be extended. Some endpoints or fields within an endpoint may be deprecated, but nothing will be removed within any given version, in order to maintain backwards compatibility with existing clients.
+Base URL
+The endpoints documented in this reference must all be appended to the base URL before they can be called.
+
+https://api.up.com.au/api/v1
+For example, the GET /accounts endpoint is callable at
+
+https://api.up.com.au/api/v1/accounts
+Authentication
+All requests to the Up Banking API must be authenticated by supplying an access token in the Authorization header. The bearer scheme is used to construct the Authorization header.
+Sample Header
+
+
+Authorization: Bearer $your_access_token
+
+Replace $your_access_token with your personal access token.
+
+Personal access tokens
+This access token is highly sensitive and must not be shared with other parties.
+Currently the Up Banking API is only available for use with a personal access token, which can be obtained in-app or by visiting api.up.com.au and following the prompts.
+
+Only one personal access token can be used at a time. You can generate a new personal access token or revoke an existing one by opening the Up app, swiping right and selecting Data Sharing from the list of settings.
+
+Pagination
+Many endpoints in the Up Banking API support pagination. When an endpoint supports pagination it includes a links field at the top-level of the response JSON and its data field contains an array of resources specific to the endpoint.
+Sample Response
+
+
+{
+  "data": [...],
+  "links": {
+    "prev": "https://api.up.com.au/api/v1/accounts?page[before]=x",
+    "next": "https://api.up.com.au/api/v1/accounts?page[after]=y"
+  }
+}
+
+The Up Banking API uses opaque cursors for pagination. Clients must refer to the prev and next links to move between pages.
+Enumerating pages
+On each page of results, the client consumes each of the resources contained in the data array. Forwards pagination is achieved by following the next link repeatedly until the next link is set to null . When the next link is null , there are no more pages available and pagination terminates. Backwards pagination is achieved by following the prev link repeatedly until the prev link is set to null . When the prev link is null , there are no more pages available and pagination terminates.
+
+Specifying the page size
+Endpoints that support pagination accept a page[size] query parameter. This value must be a positive integer and is generally constrained to an upper limit of 100 , however individual endpoints may impose different constraints.
+
+Sample URL
+
+https://api.up.com.au/api/v1/accounts?page[size]=10
+When the page[size] is specified, no more than page[size] resources will be included in the response's data field. This parameter is set to a sensible default, which varies depending on the endpoint.
+
+Error Responses
+The Up Banking API uses HTTP status codes to convey success or failure when responding to requests. Success responses will always be in the 2xx range. Error responses will usually be in the 4xx range, or more rarely, in the 5xx range.
+Status Codes
+200
+
+Successful response: Everything worked as intended
+
+201
+
+Successful response: A new resource was created successfully—Typically used with POST requests.
+
+204
+
+Successful response: No content—typically used with DELETE requests.
+
+400
+
+Bad request: Typically a problem with the query string or an encoding error.
+
+401
+
+Not authorized: The request was not authenticated.
+
+404
+
+Not found: Either the endpoint does not exist, or the requested resource does not exist.
+
+422
+
+Invalid request: The request contains invalid data and was not processed.
+
+429
+
+Too many requests: You have been rate limited—try later, ideally with exponential backoff. The X-RateLimit-Remaining response header shows the number remaining.
+
+500 502 503 504
+
+Server-side errors: Try again later.
+
+When a response is received in the 4xx or 5xx range, it includes errors that should be referred for more detail.
+
+Error Response
+Generic error response that returns one or more errors.
+
+errors
+Array [ErrorObject]
+
+The list of errors returned in this response.
+
+status
+string
+
+The HTTP status code associated with this error. This can also be obtained from the response headers. The status indicates the broad type of error according to HTTP semantics.
+
+title
+string
+
+A short description of this error. This should be stable across multiple occurrences of this type of error and typically expands on the reason for the status code.
+
+detail
+string
+
+A detailed description of this error. This should be considered unique to individual occurrences of an error and subject to change. It is useful for debugging purposes.
+
+source
+object
+
+(optional)
+If applicable, location in the request that this error relates to. This may be a parameter in the query string, or a an attribute in the request body.
+
+parameter
+string
+
+(optional)
+If this error relates to a query parameter, the name of the parameter.
+
+pointer
+string
+
+(optional)
+If this error relates to an attribute in the request body, a rfc-6901 JSON pointer to the attribute.
+
+Sample Response
+
+
+{
+  "errors": [{
+    "status": "422",
+    "title": "Invalid Request Payload",
+    "detail": "fixed value \"tags\" required",
+    "source": {
+      "pointer": "/data/0/type"
+    }
+  }]
+}
+
+Clients should typically convert these error responses to exceptions and handle them as necessary.
+
+Accounts
+Accounts represent the underlying store used to track balances and the transactions that have occurred to modify those balances over time. Up currently has three types of account: SAVER—used to earn interest and to hit savings goals, TRANSACTIONAL—used for everyday spending, and HOME_LOAN-for those with an Up Home loan.
+
+List accounts
+GET /accounts
+Retrieve a paginated list of all accounts for the currently authenticated user. The returned list is paginated and can be scrolled by following the prev and next links where present.
+
+Query Parameters
+page[size]
+integer
+
+The number of records to return in each page.
+
+e.g. ?page[size]=30
+filter[accountType]
+
+The type of account for which to return records. This can be used to filter Savers from spending accounts.
+
+e.g. ?filter[accountType]=SAVER
+filter[ownershipType]
+
+The account ownership structure for which to return records. This can be used to filter 2Up accounts from Up accounts.
+
+e.g. ?filter[ownershipType]=INDIVIDUAL
+For the purposes of readability these examples are not correctly URL-encoded. Care should be taken to correctly encode URL parameters when calling the API. For example "+" must be encoded as "%2B" in order to be received as a plus-sign and not as a space character.
+Returns
+200 - Successful Response
+data
+Array [AccountResource]
+
+The list of accounts returned in this response.
+
+type
+string
+
+The type of this resource: accounts
+
+id
+string
+
+The unique identifier for this account.
+
+attributes
+object
+
+displayName
+string
+
+The name associated with the account in the Up application.
+
+accountType
+AccountTypeEnum
+
+The bank account type of this account.
+
+ownershipType
+OwnershipTypeEnum
+
+The ownership structure for this account.
+
+balance
+MoneyObject
+
+The available balance of the account, taking into account any amounts that are currently on hold.
+
+
+
+
+
+
+
+createdAt
+string (date-time)
+
+The date-time at which this account was first opened.
+
+relationships
+object
+
+transactions
+object
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+links
+object
+
+(optional)
+self
+string
+
+The canonical link to this resource within the API.
+
+links
+object
+
+prev
+string
+
+(nullable)
+The link to the previous page in the results. If this value is null there is no previous page.
+
+next
+string
+
+(nullable)
+The link to the next page in the results. If this value is null there is no next page.
+
+Sample Request
+
+
+
+curl https://api.up.com.au/api/v1/accounts \
+  -G \
+  -H 'Authorization: Bearer up:demo:nTzzAX6rDEGrfYmq' \
+  -d 'page[size]=1'
+Sample Response
+
+
+
+{
+  "data": [
+    {
+      "type": "accounts",
+      "id": "96954aa5-7350-4295-92f5-cb4e4994d105",
+      "attributes": {
+        "displayName": "Spending",
+        "accountType": "TRANSACTIONAL",
+        "ownershipType": "INDIVIDUAL",
+        "balance": {
+          "currencyCode": "AUD",
+          "value": "1.00",
+          "valueInBaseUnits": 100
+        },
+        "createdAt": "2025-02-07T08:43:36+11:00"
+      },
+      "relationships": {
+        "transactions": {
+          "links": {
+            "related": "https://api.up.com.au/api/v1/accounts/96954aa5-7350-4295-92f5-cb4e4994d105/transactions"
+          }
+        }
+      },
+      "links": {
+        "self": "https://api.up.com.au/api/v1/accounts/96954aa5-7350-4295-92f5-cb4e4994d105"
+      }
+    }
+  ],
+  "links": {
+    "prev": null,
+    "next": "https://api.up.com.au/api/v1/accounts?page%5Bafter%5D=WyIyMDI1LTAyLTA2VDIxOjQzOjM2Ljc2MjE3NDAwMFoiLCI5Njk1NGFhNS03MzUwLTQyOTUtOTJmNS1jYjRlNDk5NGQxMDUiXQ%3D%3D&page%5Bsize%5D=1"
+  }
+}
+Retrieve account
+GET /accounts/{id}
+Retrieve a specific account by providing its unique identifier.
+
+Path Parameters
+id
+string
+
+The unique identifier for the account.
+
+e.g. a3dec806-889f-4990-b496-d87ec0f302d4
+Returns
+200 - Successful Response
+data
+AccountResource
+
+The account returned in this response.
+
+type
+string
+
+The type of this resource: accounts
+
+id
+string
+
+The unique identifier for this account.
+
+attributes
+object
+
+displayName
+string
+
+The name associated with the account in the Up application.
+
+accountType
+AccountTypeEnum
+
+The bank account type of this account.
+
+ownershipType
+OwnershipTypeEnum
+
+The ownership structure for this account.
+
+balance
+MoneyObject
+
+The available balance of the account, taking into account any amounts that are currently on hold.
+
+
+
+
+
+
+
+createdAt
+string (date-time)
+
+The date-time at which this account was first opened.
+
+relationships
+object
+
+transactions
+object
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+links
+object
+
+(optional)
+self
+string
+
+The canonical link to this resource within the API.
+
+Sample Request
+
+
+
+curl https://api.up.com.au/api/v1/accounts/5c13fe4e-291f-48c8-a763-2410607cc93d \
+  -H 'Authorization: Bearer up:demo:li6Mll5fcJbUrIVx'
+Sample Response
+
+
+
+{
+  "data": {
+    "type": "accounts",
+    "id": "5c13fe4e-291f-48c8-a763-2410607cc93d",
+    "attributes": {
+      "displayName": "🐷 Savings",
+      "accountType": "SAVER",
+      "ownershipType": "INDIVIDUAL",
+      "balance": {
+        "currencyCode": "AUD",
+        "value": "125.36",
+        "valueInBaseUnits": 12536
+      },
+      "createdAt": "2025-02-07T08:43:38+11:00"
+    },
+    "relationships": {
+      "transactions": {
+        "links": {
+          "related": "https://api.up.com.au/api/v1/accounts/5c13fe4e-291f-48c8-a763-2410607cc93d/transactions"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.up.com.au/api/v1/accounts/5c13fe4e-291f-48c8-a763-2410607cc93d"
+    }
+  }
+}
+Attachments
+Attachments represent uploaded files that are attached to transactions, these are commonly receipts.
+
+List attachments
+GET /attachments
+Retrieve a list of all attachments. The returned list is paginated and can be scrolled by following the next and prev links where present.
+
+Returns
+200 - Successful Response
+data
+Array [AttachmentResource]
+
+The list of attachments returned in this response.
+
+type
+string
+
+The type of this resource: attachments
+
+id
+string
+
+The unique identifier for this attachment.
+
+attributes
+object
+
+createdAt
+string (date-time)
+
+(nullable)
+The date-time when the file was created.
+
+fileURL
+string
+
+(nullable)
+A temporary link to download the file.
+
+fileURLExpiresAt
+string (date-time)
+
+The date-time at which the fileURL link expires.
+
+fileExtension
+string
+
+(nullable)
+File extension for the uploaded attachment.
+
+fileContentType
+string
+
+(nullable)
+Content type for the uploaded attachment.
+
+relationships
+object
+
+transaction
+object
+
+data
+object
+
+type
+string
+
+The type of this resource: transactions
+
+id
+string
+
+The unique identifier of the resource within its type.
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+links
+object
+
+(optional)
+self
+string
+
+The canonical link to this resource within the API.
+
+links
+object
+
+prev
+string
+
+(nullable)
+The link to the previous page in the results. If this value is null there is no previous page.
+
+next
+string
+
+(nullable)
+The link to the next page in the results. If this value is null there is no next page.
+
+Sample Request
+
+
+
+curl https://api.up.com.au/api/v1/attachments \
+  -H 'Authorization: Bearer up:demo:p4Rhq9m8gpYabWi6'
+Sample Response
+
+
+
+{
+  "data": [
+    {
+      "type": "attachments",
+      "id": "98d7ac73-666e-478c-8322-cb9b380306d0",
+      "attributes": {
+        "createdAt": "2025-02-07T08:43:39+11:00",
+        "fileURL": "http://localhost:8080/asset/customer_transaction_attachment.jpg?filename=uploads%2Fcustomer_transaction_attachments%2Fmodels%2Fattachment%2Ffile%2F1%2Fattachment.jpg&timestamp=1738878219&token=c58e9ce268191b440f32f559ef21270284fa55a5d551350dcd80dea3c03f1620",
+        "fileURLExpiresAt": "2025-02-07T08:58:39+11:00",
+        "fileExtension": "jpg",
+        "fileContentType": "image/jpeg"
+      },
+      "relationships": {
+        "transaction": {
+          "data": {
+            "type": "transactions",
+            "id": "a3271925-fd37-455e-8ad6-2c737180d868"
+          },
+          "links": {
+            "related": "https://api.up.com.au/api/v1/transactions/a3271925-fd37-455e-8ad6-2c737180d868"
+          }
+        }
+      },
+      "links": {
+        "self": "https://api.up.com.au/api/v1/attachments/98d7ac73-666e-478c-8322-cb9b380306d0"
+      }
+    },
+    {
+      "type": "attachments",
+      "id": "e5633bd5-286c-4b7c-aa20-e7bcb39ff989",
+      "attributes": {
+        "createdAt": "2025-02-07T08:43:39+11:00",
+        "fileURL": "http://localhost:8080/asset/customer_transaction_attachment.jpg?filename=uploads%2Fcustomer_transaction_attachments%2Fmodels%2Fattachment%2Ffile%2F2%2Fattachment.jpg&timestamp=1738878219&token=13ab85f69cdbba3e17523f4922e76f250427716b946f250af6c7104a6b58dea9",
+        "fileURLExpiresAt": "2025-02-07T08:58:39+11:00",
+        "fileExtension": "jpg",
+        "fileContentType": "image/jpeg"
+      },
+      "relationships": {
+        "transaction": {
+          "data": {
+            "type": "transactions",
+            "id": "f988b5aa-d766-40f1-a631-c48c7c4c2193"
+          },
+          "links": {
+            "related": "https://api.up.com.au/api/v1/transactions/f988b5aa-d766-40f1-a631-c48c7c4c2193"
+          }
+        }
+      },
+      "links": {
+        "self": "https://api.up.com.au/api/v1/attachments/e5633bd5-286c-4b7c-aa20-e7bcb39ff989"
+      }
+    }
+  ],
+  "links": {
+    "prev": null,
+    "next": null
+  }
+}
+Retrieve attachment
+GET /attachments/{id}
+Retrieve a specific attachment by providing its unique identifier.
+
+Path Parameters
+id
+string
+
+The unique identifier for the attachment.
+
+e.g. ada4d5c3-171c-4be7-bce2-72c78ff322da
+Returns
+200 - Successful Response
+data
+AttachmentResource
+
+The attachment returned in this response.
+
+type
+string
+
+The type of this resource: attachments
+
+id
+string
+
+The unique identifier for this attachment.
+
+attributes
+object
+
+createdAt
+string (date-time)
+
+(nullable)
+The date-time when the file was created.
+
+fileURL
+string
+
+(nullable)
+A temporary link to download the file.
+
+fileURLExpiresAt
+string (date-time)
+
+The date-time at which the fileURL link expires.
+
+fileExtension
+string
+
+(nullable)
+File extension for the uploaded attachment.
+
+fileContentType
+string
+
+(nullable)
+Content type for the uploaded attachment.
+
+relationships
+object
+
+transaction
+object
+
+data
+object
+
+type
+string
+
+The type of this resource: transactions
+
+id
+string
+
+The unique identifier of the resource within its type.
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+links
+object
+
+(optional)
+self
+string
+
+The canonical link to this resource within the API.
+
+Sample Request
+
+
+
+curl https://api.up.com.au/api/v1/attachments/dca66091-b4dc-41bd-8e47-bb512c074240 \
+  -H 'Authorization: Bearer up:demo:0R7m1G2eUJO364KK'
+Sample Response
+
+
+
+{
+  "data": {
+    "type": "attachments",
+    "id": "dca66091-b4dc-41bd-8e47-bb512c074240",
+    "attributes": {
+      "createdAt": "2025-02-07T08:43:40+11:00",
+      "fileURL": "http://localhost:8080/asset/customer_transaction_attachment.jpg?filename=uploads%2Fcustomer_transaction_attachments%2Fmodels%2Fattachment%2Ffile%2F5%2Fattachment.jpg&timestamp=1738878220&token=b3f75c6e35c8719048881e79e010b252baa22b44cc4dd38748eccbadea795ba2",
+      "fileURLExpiresAt": "2025-02-07T08:58:40+11:00",
+      "fileExtension": "jpg",
+      "fileContentType": "image/jpeg"
+    },
+    "relationships": {
+      "transaction": {
+        "data": {
+          "type": "transactions",
+          "id": "26708fb8-6cc5-41c0-812d-a7d32ae149a8"
+        },
+        "links": {
+          "related": "https://api.up.com.au/api/v1/transactions/26708fb8-6cc5-41c0-812d-a7d32ae149a8"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.up.com.au/api/v1/attachments/dca66091-b4dc-41bd-8e47-bb512c074240"
+    }
+  }
+}
+Categories
+Categories enable understanding where your money goes by driving powerful insights in Up. All categories in Up are pre-defined and are automatically assigned to new purchases in most cases. A parent-child relationship is used to represent categories, however parent categories cannot be directly assigned to transactions.
+
+List categories
+GET /categories
+Retrieve a list of all categories and their ancestry. The returned list is not paginated.
+
+Query Parameters
+filter[parent]
+string
+
+The unique identifier of a parent category for which to return only its children. Providing an invalid category identifier results in a 404 response.
+
+e.g. ?filter[parent]=good-life
+For the purposes of readability these examples are not correctly URL-encoded. Care should be taken to correctly encode URL parameters when calling the API. For example "+" must be encoded as "%2B" in order to be received as a plus-sign and not as a space character.
+Returns
+200 - Successful Response
+data
+Array [CategoryResource]
+
+The list of categories returned in this response.
+
+type
+string
+
+The type of this resource: categories
+
+id
+string
+
+The unique identifier for this category. This is a human-readable but URL-safe value.
+
+attributes
+object
+
+name
+string
+
+The name of this category as seen in the Up application.
+
+relationships
+object
+
+parent
+object
+
+data
+object
+
+(nullable)
+type
+string
+
+The type of this resource: categories
+
+id
+string
+
+The unique identifier of the resource within its type.
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+children
+object
+
+data
+Array [object]
+
+
+
+
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+links
+object
+
+(optional)
+self
+string
+
+The canonical link to this resource within the API.
+
+Sample Request
+
+
+
+curl https://api.up.com.au/api/v1/categories \
+  -G \
+  -H 'Authorization: Bearer up:demo:GheMvr7GR8BCm1ig' \
+  -d 'filter[parent]=good-life'
+Sample Response
+
+
+
+{
+  "data": [
+    {
+      "type": "categories",
+      "id": "hobbies",
+      "attributes": {
+        "name": "Hobbies"
+      },
+      "relationships": {
+        "parent": {
+          "data": {
+            "type": "categories",
+            "id": "good-life"
+          },
+          "links": {
+            "related": "https://api.up.com.au/api/v1/categories/good-life"
+          }
+        },
+        "children": {
+          "data": [],
+          "links": {
+            "related": "https://api.up.com.au/api/v1/categories?filter%5Bparent%5D=hobbies"
+          }
+        }
+      },
+      "links": {
+        "self": "https://api.up.com.au/api/v1/categories/hobbies"
+      }
+    },
+    {
+      "type": "categories",
+      "id": "restaurants-and-cafes",
+      "attributes": {
+        "name": "Restaurants & Cafes"
+      },
+      "relationships": {
+        "parent": {
+          "data": {
+            "type": "categories",
+            "id": "good-life"
+          },
+          "links": {
+            "related": "https://api.up.com.au/api/v1/categories/good-life"
+          }
+        },
+        "children": {
+          "data": [],
+          "links": {
+            "related": "https://api.up.com.au/api/v1/categories?filter%5Bparent%5D=restaurants-and-cafes"
+          }
+        }
+      },
+      "links": {
+        "self": "https://api.up.com.au/api/v1/categories/restaurants-and-cafes"
+      }
+    }
+  ]
+}
+Retrieve category
+GET /categories/{id}
+Retrieve a specific category by providing its unique identifier.
+
+Path Parameters
+id
+string
+
+The unique identifier for the category.
+
+e.g. restaurants-and-cafes
+Returns
+200 - Successful Response
+data
+CategoryResource
+
+The category returned in this response.
+
+type
+string
+
+The type of this resource: categories
+
+id
+string
+
+The unique identifier for this category. This is a human-readable but URL-safe value.
+
+attributes
+object
+
+name
+string
+
+The name of this category as seen in the Up application.
+
+relationships
+object
+
+parent
+object
+
+data
+object
+
+(nullable)
+type
+string
+
+The type of this resource: categories
+
+id
+string
+
+The unique identifier of the resource within its type.
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+children
+object
+
+data
+Array [object]
+
+
+
+
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+links
+object
+
+(optional)
+self
+string
+
+The canonical link to this resource within the API.
+
+Sample Request
+
+
+
+curl https://api.up.com.au/api/v1/categories/home \
+  -H 'Authorization: Bearer up:demo:dTqJIBgNAipqTdb7'
+Sample Response
+
+
+
+{
+  "data": {
+    "type": "categories",
+    "id": "home",
+    "attributes": {
+      "name": "Home"
+    },
+    "relationships": {
+      "parent": {
+        "data": null
+      },
+      "children": {
+        "data": [
+          {
+            "type": "categories",
+            "id": "groceries"
+          }
+        ],
+        "links": {
+          "related": "https://api.up.com.au/api/v1/categories?filter%5Bparent%5D=home"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.up.com.au/api/v1/categories/home"
+    }
+  }
+}
+Categorize transaction
+PATCH /transactions/{transactionId}/relationships/category
+Updates the category associated with a transaction. Only transactions for which isCategorizable is set to true support this operation. The id is taken from the list exposed on /categories and cannot be one of the top-level (parent) categories. To de-categorize a transaction, set the entire data key to null. An HTTP 204 is returned on success. The associated category, along with its request URL is also exposed via the category relationship on the transaction resource returned from /transactions/{id}.
+
+Path Parameters
+transactionId
+string
+
+The unique identifier for the transaction.
+
+e.g. a73b99e3-3142-472d-ae91-debbe2b285f2
+Request Payload
+data
+CategoryInputResourceIdentifier
+
+(nullable)
+The category to set on the transaction. Set this entire key to null de-categorize a transaction.
+
+type
+string
+
+The type of this resource: categories
+
+id
+string
+
+The unique identifier of the category, as returned by the /categories endpoint.
+
+Returns
+204 - Successful Response
+Sample Request
+
+
+
+curl https://api.up.com.au/api/v1/transactions/221748a5-2524-49a5-9f02-8a12ccbf1722/relationships/category \
+  -XPATCH \
+  -H 'Authorization: Bearer up:demo:IMWds88tj3xrQFkP' \
+  -H 'Content-Type: application/json' \
+  --data-binary '{
+    "data": {
+      "type": "categories",
+      "id": "restaurants-and-cafes"
+    }
+  }'
+Tags
+Tags are custom labels that can be associated with transactions on Up. Within the Up application, tags provide additional insight into spending. For example, you could have a "Take Away" tag that you apply to purchases from food delivery services. The Up API allows you to manage the tags associated with transactions. Each transaction may have up to 6 tags.
+
+Tags are identified by their labels, which are unique strings, so the tag "Holiday" has also the id "Holiday".
+
+List tags
+GET /tags
+Retrieve a list of all tags currently in use. The returned list is paginated and can be scrolled by following the next and prev links where present. Results are ordered lexicographically. The transactions relationship for each tag exposes a link to get the transactions with the given tag.
+
+Query Parameters
+page[size]
+integer
+
+The number of records to return in each page.
+
+e.g. ?page[size]=50
+For the purposes of readability these examples are not correctly URL-encoded. Care should be taken to correctly encode URL parameters when calling the API. For example "+" must be encoded as "%2B" in order to be received as a plus-sign and not as a space character.
+Returns
+200 - Successful Response
+data
+Array [TagResource]
+
+The list of tags returned in this response.
+
+type
+string
+
+The type of this resource: tags
+
+id
+string
+
+The label of the tag, which also acts as the tag’s unique identifier.
+
+relationships
+object
+
+transactions
+object
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+links
+object
+
+prev
+string
+
+(nullable)
+The link to the previous page in the results. If this value is null there is no previous page.
+
+next
+string
+
+(nullable)
+The link to the next page in the results. If this value is null there is no next page.
+
+Sample Request
+
+
+
+curl https://api.up.com.au/api/v1/tags \
+  -G \
+  -H 'Authorization: Bearer up:demo:1SVQMp17kOMUPcGc' \
+  -d 'page[size]=2'
+Sample Response
+
+
+
+{
+  "data": [
+    {
+      "type": "tags",
+      "id": "Holiday",
+      "relationships": {
+        "transactions": {
+          "links": {
+            "related": "https://api.up.com.au/api/v1/transactions?filter%5Btag%5D=Holiday"
+          }
+        }
+      }
+    },
+    {
+      "type": "tags",
+      "id": "Pizza Night",
+      "relationships": {
+        "transactions": {
+          "links": {
+            "related": "https://api.up.com.au/api/v1/transactions?filter%5Btag%5D=Pizza+Night"
+          }
+        }
+      }
+    }
+  ],
+  "links": {
+    "prev": null,
+    "next": "https://api.up.com.au/api/v1/tags?page%5Bafter%5D=WyJQaXp6YSBOaWdodCJd&page%5Bsize%5D=2"
+  }
+}
+Add tags to transaction
+POST /transactions/{transactionId}/relationships/tags
+Associates one or more tags with a specific transaction. No more than 6 tags may be present on any single transaction. Duplicate tags are silently ignored. An HTTP 204 is returned on success. The associated tags, along with this request URL, are also exposed via the tags relationship on the transaction resource returned from /transactions/{id}.
+
+Path Parameters
+transactionId
+string
+
+The unique identifier for the transaction.
+
+e.g. 6ba6473c-18e4-4752-984f-5236a3f70440
+Request Payload
+data
+Array [TagInputResourceIdentifier]
+
+The tags to add to or remove from the transaction.
+
+type
+string
+
+The type of this resource: tags
+
+id
+string
+
+The label of the tag, which also acts as the tag’s unique identifier.
+
+Returns
+204 - Successful Response
+Sample Request
+
+
+
+curl https://api.up.com.au/api/v1/transactions/e068b822-c332-459a-a2ad-e2f85d2ce8bb/relationships/tags \
+  -XPOST \
+  -H 'Authorization: Bearer up:demo:wVp4fugvFGKv6JlT' \
+  -H 'Content-Type: application/json' \
+  --data-binary '{
+    "data": [
+      {
+        "type": "tags",
+        "id": "Holiday"
+      },
+      {
+        "type": "tags",
+        "id": "Queensland"
+      }
+    ]
+  }'
+Remove tags from transaction
+DELETE /transactions/{transactionId}/relationships/tags
+Disassociates one or more tags from a specific transaction. Tags that are not associated are silently ignored. An HTTP 204 is returned on success. The associated tags, along with this request URL, are also exposed via the tags relationship on the transaction resource returned from /transactions/{id}.
+
+Path Parameters
+transactionId
+string
+
+The unique identifier for the transaction.
+
+e.g. 81afde16-b916-4d05-b4ac-18acea0c2f07
+Request Payload
+data
+Array [TagInputResourceIdentifier]
+
+The tags to add to or remove from the transaction.
+
+type
+string
+
+The type of this resource: tags
+
+id
+string
+
+The label of the tag, which also acts as the tag’s unique identifier.
+
+Returns
+204 - Successful Response
+Sample Request
+
+
+
+curl https://api.up.com.au/api/v1/transactions/32507d9e-5241-4aeb-aac3-679b5bc33537/relationships/tags \
+  -XDELETE \
+  -H 'Authorization: Bearer up:demo:JOkYHBPBoojAIUGh' \
+  -H 'Content-Type: application/json' \
+  --data-binary '{
+    "data": [
+      {
+        "type": "tags",
+        "id": "Holiday"
+      },
+      {
+        "type": "tags",
+        "id": "Queensland"
+      }
+    ]
+  }'
+Transactions
+Transactions represent the movement of money into and out of an account. They have many characteristics that vary depending on the kind of transaction. Transactions may be temporarily HELD (pending) or SETTLED, typically depending on which payment method was used at the point of sale.
+
+List transactions
+GET /transactions
+Retrieve a list of all transactions across all accounts for the currently authenticated user. The returned list is paginated and can be scrolled by following the next and prev links where present. To narrow the results to a specific date range pass one or both of filter[since] and filter[until] in the query string. These filter parameters should not be used for pagination. Results are ordered newest first to oldest last.
+
+Query Parameters
+page[size]
+integer
+
+The number of records to return in each page.
+
+e.g. ?page[size]=30
+filter[status]
+
+The transaction status for which to return records. This can be used to filter HELD transactions from those that are SETTLED.
+
+e.g. ?filter[status]=HELD
+filter[since]
+string
+
+The start date-time from which to return records, formatted according to rfc-3339. Not to be used for pagination purposes.
+
+e.g. ?filter[since]=2020-01-01T01:02:03+10:00
+filter[until]
+string
+
+The end date-time up to which to return records, formatted according to rfc-3339. Not to be used for pagination purposes.
+
+e.g. ?filter[until]=2020-02-01T01:02:03+10:00
+filter[category]
+string
+
+The category identifier for which to filter transactions. Both parent and child categories can be filtered through this parameter. Providing an invalid category identifier results in a 404 response.
+
+e.g. ?filter[category]=good-life
+filter[tag]
+string
+
+A transaction tag to filter for which to return records. If the tag does not exist, zero records are returned and a success response is given.
+
+e.g. ?filter[tag]=Holiday
+For the purposes of readability these examples are not correctly URL-encoded. Care should be taken to correctly encode URL parameters when calling the API. For example "+" must be encoded as "%2B" in order to be received as a plus-sign and not as a space character.
+Returns
+200 - Successful Response
+data
+Array [TransactionResource]
+
+The list of transactions returned in this response.
+
+type
+string
+
+The type of this resource: transactions
+
+id
+string
+
+The unique identifier for this transaction.
+
+attributes
+object
+
+status
+TransactionStatusEnum
+
+The current processing status of this transaction, according to whether or not this transaction has settled or is still held.
+
+rawText
+string
+
+(nullable)
+The original, unprocessed text of the transaction. This is often not a perfect indicator of the actual merchant, but it is useful for reconciliation purposes in some cases.
+
+description
+string
+
+A short description for this transaction. Usually the merchant name for purchases.
+
+message
+string
+
+(nullable)
+Attached message for this transaction, such as a payment message, or a transfer note.
+
+isCategorizable
+boolean
+
+Boolean flag set to true on transactions that support the use of categories.
+
+holdInfo
+HoldInfoObject
+
+(nullable)
+If this transaction is currently in the HELD status, or was ever in the HELD status, the amount and foreignAmount of the transaction while HELD.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+roundUp
+RoundUpObject
+
+(nullable)
+Details of how this transaction was rounded-up. If no Round Up was applied this field will be null.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+cashback
+CashbackObject
+
+(nullable)
+If all or part of this transaction was instantly reimbursed in the form of cashback, details of the reimbursement.
+
+
+
+
+
+
+
+
+
+
+
+amount
+MoneyObject
+
+The amount of this transaction in Australian dollars. For transactions that were once HELD but are now SETTLED, refer to the holdInfo field for the original amount the transaction was HELD at.
+
+
+
+
+
+
+
+foreignAmount
+MoneyObject
+
+(nullable)
+The foreign currency amount of this transaction. This field will be null for domestic transactions. The amount was converted to the AUD amount reflected in the amount of this transaction. Refer to the holdInfo field for the original foreignAmount the transaction was HELD at.
+
+
+
+
+
+
+
+cardPurchaseMethod
+CardPurchaseMethodObject
+
+(nullable)
+Information about the card used for this transaction, if applicable.
+
+
+
+
+
+settledAt
+string (date-time)
+
+(nullable)
+The date-time at which this transaction settled. This field will be null for transactions that are currently in the HELD status.
+
+createdAt
+string (date-time)
+
+The date-time at which this transaction was first encountered.
+
+transactionType
+string
+
+(nullable)
+A description of the transaction method used e.g. Purchase, BPAY Payment.
+
+note
+NoteObject
+
+(nullable)
+A customer provided note about the transaction. Can only be provided by Up High subscribers.
+
+
+
+performingCustomer
+CustomerObject
+
+(nullable)
+The customer who initated the transaction. For 2Up accounts this could be the customer who's card was used.
+
+
+
+deepLinkURL
+string
+
+A deep link to the transaction receipt screen in-app.
+
+relationships
+object
+
+account
+object
+
+data
+object
+
+type
+string
+
+The type of this resource: accounts
+
+id
+string
+
+The unique identifier of the resource within its type.
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+transferAccount
+object
+
+If this transaction is a transfer between accounts, this relationship will contain the account the transaction went to/came from. The amount field can be used to determine the direction of the transfer.
+
+data
+object
+
+(nullable)
+type
+string
+
+The type of this resource: accounts
+
+id
+string
+
+The unique identifier of the resource within its type.
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+category
+object
+
+data
+object
+
+(nullable)
+type
+string
+
+The type of this resource: categories
+
+id
+string
+
+The unique identifier of the resource within its type.
+
+links
+object
+
+(optional)
+self
+string
+
+The link to retrieve or modify linkage between this resources and the related resource(s) in this relationship.
+
+related
+string
+
+(optional)
+The link to retrieve the related resource(s) in this relationship.
+
+parentCategory
+object
+
+data
+object
+
+(nullable)
+type
+string
+
+The type of this resource: categories
+
+id
+string
+
+The unique identifier of the resource within its type.
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+tags
+object
+
+data
+Array [object]
+
+
+
+
+
+links
+object
+
+(optional)
+self
+string
+
+The link to retrieve or modify linkage between this resources and the related resource(s) in this relationship.
+
+attachment
+object
+
+data
+object
+
+(nullable)
+type
+string
+
+The type of this resource: attachments
+
+id
+string
+
+The unique identifier of the resource within its type.
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+links
+object
+
+(optional)
+self
+string
+
+The canonical link to this resource within the API.
+
+links
+object
+
+prev
+string
+
+(nullable)
+The link to the previous page in the results. If this value is null there is no previous page.
+
+next
+string
+
+(nullable)
+The link to the next page in the results. If this value is null there is no next page.
+
+Sample Request
+
+
+
+curl https://api.up.com.au/api/v1/transactions \
+  -G \
+  -H 'Authorization: Bearer up:demo:R70jnNfXz0MHE6b8' \
+  -d 'page[size]=1' \
+  -d 'filter[tag]=Pizza Night' \
+  -d 'filter[status]=SETTLED'
+Sample Response
+
+
+
+{
+  "data": [
+    {
+      "type": "transactions",
+      "id": "b6700d59-7d13-4f73-a616-a8d951cb7686",
+      "attributes": {
+        "status": "SETTLED",
+        "rawText": null,
+        "description": "David Taylor",
+        "message": "Money for the pizzas last night.",
+        "isCategorizable": true,
+        "holdInfo": null,
+        "roundUp": null,
+        "cashback": null,
+        "amount": {
+          "currencyCode": "AUD",
+          "value": "-59.98",
+          "valueInBaseUnits": -5998
+        },
+        "foreignAmount": null,
+        "cardPurchaseMethod": null,
+        "settledAt": "2025-02-06T01:41:54+11:00",
+        "createdAt": "2025-02-06T01:41:54+11:00",
+        "transactionType": null,
+        "note": null,
+        "performingCustomer": {
+          "displayName": "Bobby"
+        },
+        "deepLinkURL": "up://transaction/VHJhbnNhY3Rpb24tMzg="
+      },
+      "relationships": {
+        "account": {
+          "data": {
+            "type": "accounts",
+            "id": "1940c4f8-e8ce-457d-ba21-bcd9296d634b"
+          },
+          "links": {
+            "related": "https://api.up.com.au/api/v1/accounts/1940c4f8-e8ce-457d-ba21-bcd9296d634b"
+          }
+        },
+        "transferAccount": {
+          "data": null
+        },
+        "category": {
+          "data": null,
+          "links": {
+            "self": "https://api.up.com.au/api/v1/transactions/b6700d59-7d13-4f73-a616-a8d951cb7686/relationships/category"
+          }
+        },
+        "parentCategory": {
+          "data": null
+        },
+        "tags": {
+          "data": [
+            {
+              "type": "tags",
+              "id": "Pizza Night"
+            }
+          ],
+          "links": {
+            "self": "https://api.up.com.au/api/v1/transactions/b6700d59-7d13-4f73-a616-a8d951cb7686/relationships/tags"
+          }
+        },
+        "attachment": {
+          "data": null
+        }
+      },
+      "links": {
+        "self": "https://api.up.com.au/api/v1/transactions/b6700d59-7d13-4f73-a616-a8d951cb7686"
+      }
+    }
+  ],
+  "links": {
+    "prev": null,
+    "next": null
+  }
+}
+Retrieve transaction
+GET /transactions/{id}
+Retrieve a specific transaction by providing its unique identifier.
+
+Path Parameters
+id
+string
+
+The unique identifier for the transaction.
+
+e.g. a5aceb25-1ea7-4791-80fb-d7944e21d674
+Returns
+200 - Successful Response
+data
+TransactionResource
+
+The transaction returned in this response.
+
+type
+string
+
+The type of this resource: transactions
+
+id
+string
+
+The unique identifier for this transaction.
+
+attributes
+object
+
+status
+TransactionStatusEnum
+
+The current processing status of this transaction, according to whether or not this transaction has settled or is still held.
+
+rawText
+string
+
+(nullable)
+The original, unprocessed text of the transaction. This is often not a perfect indicator of the actual merchant, but it is useful for reconciliation purposes in some cases.
+
+description
+string
+
+A short description for this transaction. Usually the merchant name for purchases.
+
+message
+string
+
+(nullable)
+Attached message for this transaction, such as a payment message, or a transfer note.
+
+isCategorizable
+boolean
+
+Boolean flag set to true on transactions that support the use of categories.
+
+holdInfo
+HoldInfoObject
+
+(nullable)
+If this transaction is currently in the HELD status, or was ever in the HELD status, the amount and foreignAmount of the transaction while HELD.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+roundUp
+RoundUpObject
+
+(nullable)
+Details of how this transaction was rounded-up. If no Round Up was applied this field will be null.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+cashback
+CashbackObject
+
+(nullable)
+If all or part of this transaction was instantly reimbursed in the form of cashback, details of the reimbursement.
+
+
+
+
+
+
+
+
+
+
+
+amount
+MoneyObject
+
+The amount of this transaction in Australian dollars. For transactions that were once HELD but are now SETTLED, refer to the holdInfo field for the original amount the transaction was HELD at.
+
+
+
+
+
+
+
+foreignAmount
+MoneyObject
+
+(nullable)
+The foreign currency amount of this transaction. This field will be null for domestic transactions. The amount was converted to the AUD amount reflected in the amount of this transaction. Refer to the holdInfo field for the original foreignAmount the transaction was HELD at.
+
+
+
+
+
+
+
+cardPurchaseMethod
+CardPurchaseMethodObject
+
+(nullable)
+Information about the card used for this transaction, if applicable.
+
+
+
+
+
+settledAt
+string (date-time)
+
+(nullable)
+The date-time at which this transaction settled. This field will be null for transactions that are currently in the HELD status.
+
+createdAt
+string (date-time)
+
+The date-time at which this transaction was first encountered.
+
+transactionType
+string
+
+(nullable)
+A description of the transaction method used e.g. Purchase, BPAY Payment.
+
+note
+NoteObject
+
+(nullable)
+A customer provided note about the transaction. Can only be provided by Up High subscribers.
+
+
+
+performingCustomer
+CustomerObject
+
+(nullable)
+The customer who initated the transaction. For 2Up accounts this could be the customer who's card was used.
+
+
+
+deepLinkURL
+string
+
+A deep link to the transaction receipt screen in-app.
+
+relationships
+object
+
+account
+object
+
+data
+object
+
+type
+string
+
+The type of this resource: accounts
+
+id
+string
+
+The unique identifier of the resource within its type.
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+transferAccount
+object
+
+If this transaction is a transfer between accounts, this relationship will contain the account the transaction went to/came from. The amount field can be used to determine the direction of the transfer.
+
+data
+object
+
+(nullable)
+type
+string
+
+The type of this resource: accounts
+
+id
+string
+
+The unique identifier of the resource within its type.
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+category
+object
+
+data
+object
+
+(nullable)
+type
+string
+
+The type of this resource: categories
+
+id
+string
+
+The unique identifier of the resource within its type.
+
+links
+object
+
+(optional)
+self
+string
+
+The link to retrieve or modify linkage between this resources and the related resource(s) in this relationship.
+
+related
+string
+
+(optional)
+The link to retrieve the related resource(s) in this relationship.
+
+parentCategory
+object
+
+data
+object
+
+(nullable)
+type
+string
+
+The type of this resource: categories
+
+id
+string
+
+The unique identifier of the resource within its type.
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+tags
+object
+
+data
+Array [object]
+
+
+
+
+
+links
+object
+
+(optional)
+self
+string
+
+The link to retrieve or modify linkage between this resources and the related resource(s) in this relationship.
+
+attachment
+object
+
+data
+object
+
+(nullable)
+type
+string
+
+The type of this resource: attachments
+
+id
+string
+
+The unique identifier of the resource within its type.
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+links
+object
+
+(optional)
+self
+string
+
+The canonical link to this resource within the API.
+
+Sample Request
+
+
+
+curl https://api.up.com.au/api/v1/transactions/e060adc9-420f-40e0-9c03-4024e60a75ee \
+  -H 'Authorization: Bearer up:demo:4eZwH4IYlVKmFgox'
+Sample Response
+
+
+
+{
+  "data": {
+    "type": "transactions",
+    "id": "e060adc9-420f-40e0-9c03-4024e60a75ee",
+    "attributes": {
+      "status": "SETTLED",
+      "rawText": "WARUNG BEBEK, UBUD INDONES",
+      "description": "Warung Bebek Bengil",
+      "message": null,
+      "isCategorizable": true,
+      "holdInfo": {
+        "amount": {
+          "currencyCode": "AUD",
+          "value": "-107.92",
+          "valueInBaseUnits": -10792
+        },
+        "foreignAmount": null
+      },
+      "roundUp": {
+        "amount": {
+          "currencyCode": "AUD",
+          "value": "-0.08",
+          "valueInBaseUnits": -8
+        },
+        "boostPortion": null
+      },
+      "cashback": null,
+      "amount": {
+        "currencyCode": "AUD",
+        "value": "-107.92",
+        "valueInBaseUnits": -10792
+      },
+      "foreignAmount": {
+        "currencyCode": "IDR",
+        "value": "-1053698.77",
+        "valueInBaseUnits": -105369877
+      },
+      "cardPurchaseMethod": {
+        "method": "CARD_ON_FILE",
+        "cardNumberSuffix": "0001"
+      },
+      "settledAt": "2025-02-04T04:00:00+11:00",
+      "createdAt": "2025-02-04T04:00:00+11:00",
+      "transactionType": null,
+      "note": null,
+      "performingCustomer": {
+        "displayName": "Bobby"
+      },
+      "deepLinkURL": "up://transaction/VHJhbnNhY3Rpb24tNDY="
+    },
+    "relationships": {
+      "account": {
+        "data": {
+          "type": "accounts",
+          "id": "6c577eeb-54e2-49a7-9f3b-9ea3da09b0e0"
+        },
+        "links": {
+          "related": "https://api.up.com.au/api/v1/accounts/6c577eeb-54e2-49a7-9f3b-9ea3da09b0e0"
+        }
+      },
+      "transferAccount": {
+        "data": null
+      },
+      "category": {
+        "data": null,
+        "links": {
+          "self": "https://api.up.com.au/api/v1/transactions/e060adc9-420f-40e0-9c03-4024e60a75ee/relationships/category"
+        }
+      },
+      "parentCategory": {
+        "data": null
+      },
+      "tags": {
+        "data": [],
+        "links": {
+          "self": "https://api.up.com.au/api/v1/transactions/e060adc9-420f-40e0-9c03-4024e60a75ee/relationships/tags"
+        }
+      },
+      "attachment": {
+        "data": null
+      }
+    },
+    "links": {
+      "self": "https://api.up.com.au/api/v1/transactions/e060adc9-420f-40e0-9c03-4024e60a75ee"
+    }
+  }
+}
+List transactions by account
+GET /accounts/{accountId}/transactions
+Retrieve a list of all transactions for a specific account. The returned list is paginated and can be scrolled by following the next and prev links where present. To narrow the results to a specific date range pass one or both of filter[since] and filter[until] in the query string. These filter parameters should not be used for pagination. Results are ordered newest first to oldest last.
+
+Path Parameters
+accountId
+string
+
+The unique identifier for the account.
+
+e.g. 44a31734-ab8a-4a1a-a9ee-ae054825176a
+Query Parameters
+page[size]
+integer
+
+The number of records to return in each page.
+
+e.g. ?page[size]=30
+filter[status]
+
+The transaction status for which to return records. This can be used to filter HELD transactions from those that are SETTLED.
+
+e.g. ?filter[status]=HELD
+filter[since]
+string
+
+The start date-time from which to return records, formatted according to rfc-3339. Not to be used for pagination purposes.
+
+e.g. ?filter[since]=2020-01-01T01:02:03+10:00
+filter[until]
+string
+
+The end date-time up to which to return records, formatted according to rfc-3339. Not to be used for pagination purposes.
+
+e.g. ?filter[until]=2020-02-01T01:02:03+10:00
+filter[category]
+string
+
+The category identifier for which to filter transactions. Both parent and child categories can be filtered through this parameter. Providing an invalid category identifier results in a 404 response.
+
+e.g. ?filter[category]=good-life
+filter[tag]
+string
+
+A transaction tag to filter for which to return records. If the tag does not exist, zero records are returned and a success response is given.
+
+e.g. ?filter[tag]=Holiday
+For the purposes of readability these examples are not correctly URL-encoded. Care should be taken to correctly encode URL parameters when calling the API. For example "+" must be encoded as "%2B" in order to be received as a plus-sign and not as a space character.
+Returns
+200 - Successful Response
+data
+Array [TransactionResource]
+
+The list of transactions returned in this response.
+
+type
+string
+
+The type of this resource: transactions
+
+id
+string
+
+The unique identifier for this transaction.
+
+attributes
+object
+
+status
+TransactionStatusEnum
+
+The current processing status of this transaction, according to whether or not this transaction has settled or is still held.
+
+rawText
+string
+
+(nullable)
+The original, unprocessed text of the transaction. This is often not a perfect indicator of the actual merchant, but it is useful for reconciliation purposes in some cases.
+
+description
+string
+
+A short description for this transaction. Usually the merchant name for purchases.
+
+message
+string
+
+(nullable)
+Attached message for this transaction, such as a payment message, or a transfer note.
+
+isCategorizable
+boolean
+
+Boolean flag set to true on transactions that support the use of categories.
+
+holdInfo
+HoldInfoObject
+
+(nullable)
+If this transaction is currently in the HELD status, or was ever in the HELD status, the amount and foreignAmount of the transaction while HELD.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+roundUp
+RoundUpObject
+
+(nullable)
+Details of how this transaction was rounded-up. If no Round Up was applied this field will be null.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+cashback
+CashbackObject
+
+(nullable)
+If all or part of this transaction was instantly reimbursed in the form of cashback, details of the reimbursement.
+
+
+
+
+
+
+
+
+
+
+
+amount
+MoneyObject
+
+The amount of this transaction in Australian dollars. For transactions that were once HELD but are now SETTLED, refer to the holdInfo field for the original amount the transaction was HELD at.
+
+
+
+
+
+
+
+foreignAmount
+MoneyObject
+
+(nullable)
+The foreign currency amount of this transaction. This field will be null for domestic transactions. The amount was converted to the AUD amount reflected in the amount of this transaction. Refer to the holdInfo field for the original foreignAmount the transaction was HELD at.
+
+
+
+
+
+
+
+cardPurchaseMethod
+CardPurchaseMethodObject
+
+(nullable)
+Information about the card used for this transaction, if applicable.
+
+
+
+
+
+settledAt
+string (date-time)
+
+(nullable)
+The date-time at which this transaction settled. This field will be null for transactions that are currently in the HELD status.
+
+createdAt
+string (date-time)
+
+The date-time at which this transaction was first encountered.
+
+transactionType
+string
+
+(nullable)
+A description of the transaction method used e.g. Purchase, BPAY Payment.
+
+note
+NoteObject
+
+(nullable)
+A customer provided note about the transaction. Can only be provided by Up High subscribers.
+
+
+
+performingCustomer
+CustomerObject
+
+(nullable)
+The customer who initated the transaction. For 2Up accounts this could be the customer who's card was used.
+
+
+
+deepLinkURL
+string
+
+A deep link to the transaction receipt screen in-app.
+
+relationships
+object
+
+account
+object
+
+data
+object
+
+type
+string
+
+The type of this resource: accounts
+
+id
+string
+
+The unique identifier of the resource within its type.
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+transferAccount
+object
+
+If this transaction is a transfer between accounts, this relationship will contain the account the transaction went to/came from. The amount field can be used to determine the direction of the transfer.
+
+data
+object
+
+(nullable)
+type
+string
+
+The type of this resource: accounts
+
+id
+string
+
+The unique identifier of the resource within its type.
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+category
+object
+
+data
+object
+
+(nullable)
+type
+string
+
+The type of this resource: categories
+
+id
+string
+
+The unique identifier of the resource within its type.
+
+links
+object
+
+(optional)
+self
+string
+
+The link to retrieve or modify linkage between this resources and the related resource(s) in this relationship.
+
+related
+string
+
+(optional)
+The link to retrieve the related resource(s) in this relationship.
+
+parentCategory
+object
+
+data
+object
+
+(nullable)
+type
+string
+
+The type of this resource: categories
+
+id
+string
+
+The unique identifier of the resource within its type.
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+tags
+object
+
+data
+Array [object]
+
+
+
+
+
+links
+object
+
+(optional)
+self
+string
+
+The link to retrieve or modify linkage between this resources and the related resource(s) in this relationship.
+
+attachment
+object
+
+data
+object
+
+(nullable)
+type
+string
+
+The type of this resource: attachments
+
+id
+string
+
+The unique identifier of the resource within its type.
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+links
+object
+
+(optional)
+self
+string
+
+The canonical link to this resource within the API.
+
+links
+object
+
+prev
+string
+
+(nullable)
+The link to the previous page in the results. If this value is null there is no previous page.
+
+next
+string
+
+(nullable)
+The link to the next page in the results. If this value is null there is no next page.
+
+Sample Request
+
+
+
+curl https://api.up.com.au/api/v1/accounts/029480c4-76e2-4bb6-abcc-5aab6feea9a4/transactions \
+  -G \
+  -H 'Authorization: Bearer up:demo:9wOCZjKqwtcK8On8' \
+  -d 'page[size]=1' \
+  -d 'filter[status]=HELD' \
+  -d 'filter[category]=good-life'
+Sample Response
+
+
+
+{
+  "data": [
+    {
+      "type": "transactions",
+      "id": "3d5b48cf-dfca-425e-9025-f62c984933c2",
+      "attributes": {
+        "status": "HELD",
+        "rawText": "Spotify 0123456789",
+        "description": "Spotify",
+        "message": null,
+        "isCategorizable": true,
+        "holdInfo": {
+          "amount": {
+            "currencyCode": "AUD",
+            "value": "-11.95",
+            "valueInBaseUnits": -1195
+          },
+          "foreignAmount": null
+        },
+        "roundUp": null,
+        "cashback": null,
+        "amount": {
+          "currencyCode": "AUD",
+          "value": "-11.95",
+          "valueInBaseUnits": -1195
+        },
+        "foreignAmount": null,
+        "cardPurchaseMethod": null,
+        "settledAt": null,
+        "createdAt": "2025-02-04T04:35:01+11:00",
+        "transactionType": null,
+        "note": null,
+        "performingCustomer": {
+          "displayName": "Bobby"
+        },
+        "deepLinkURL": "up://transaction/VHJhbnNhY3Rpb24tNjk="
+      },
+      "relationships": {
+        "account": {
+          "data": {
+            "type": "accounts",
+            "id": "029480c4-76e2-4bb6-abcc-5aab6feea9a4"
+          },
+          "links": {
+            "related": "https://api.up.com.au/api/v1/accounts/029480c4-76e2-4bb6-abcc-5aab6feea9a4"
+          }
+        },
+        "transferAccount": {
+          "data": null
+        },
+        "category": {
+          "data": {
+            "type": "categories",
+            "id": "tv-and-music"
+          },
+          "links": {
+            "self": "https://api.up.com.au/api/v1/transactions/3d5b48cf-dfca-425e-9025-f62c984933c2/relationships/category",
+            "related": "https://api.up.com.au/api/v1/categories/tv-and-music"
+          }
+        },
+        "parentCategory": {
+          "data": {
+            "type": "categories",
+            "id": "good-life"
+          },
+          "links": {
+            "related": "https://api.up.com.au/api/v1/categories/good-life"
+          }
+        },
+        "tags": {
+          "data": [],
+          "links": {
+            "self": "https://api.up.com.au/api/v1/transactions/3d5b48cf-dfca-425e-9025-f62c984933c2/relationships/tags"
+          }
+        },
+        "attachment": {
+          "data": null
+        }
+      },
+      "links": {
+        "self": "https://api.up.com.au/api/v1/transactions/3d5b48cf-dfca-425e-9025-f62c984933c2"
+      }
+    }
+  ],
+  "links": {
+    "prev": null,
+    "next": null
+  }
+}
+Utility endpoints
+Some endpoints exist not to expose data, but to test the API itself. Currently there is only one endpoint in this group: ping!
+
+Ping
+GET /util/ping
+Make a basic ping request to the API. This is useful to verify that authentication is functioning correctly. On authentication success an HTTP 200 status is returned. On failure an HTTP 401 error response is returned.
+
+Returns
+200 - Successful Response
+meta
+object
+
+id
+string
+
+The unique identifier of the authenticated customer.
+
+statusEmoji
+string
+
+A cute emoji that represents the response status.
+
+401 - Not Authorized
+errors
+Array [ErrorObject]
+
+The list of errors returned in this response.
+
+status
+string
+
+The HTTP status code associated with this error. This can also be obtained from the response headers. The status indicates the broad type of error according to HTTP semantics.
+
+title
+string
+
+A short description of this error. This should be stable across multiple occurrences of this type of error and typically expands on the reason for the status code.
+
+detail
+string
+
+A detailed description of this error. This should be considered unique to individual occurrences of an error and subject to change. It is useful for debugging purposes.
+
+source
+object
+
+(optional)
+If applicable, location in the request that this error relates to. This may be a parameter in the query string, or a an attribute in the request body.
+
+parameter
+string
+
+(optional)
+If this error relates to a query parameter, the name of the parameter.
+
+pointer
+string
+
+(optional)
+If this error relates to an attribute in the request body, a rfc-6901 JSON pointer to the attribute.
+
+Sample Request
+
+
+
+curl https://api.up.com.au/api/v1/util/ping \
+  -H 'Authorization: Bearer up:demo:5gKfvT4W4rYYHdnI'
+Sample Response
+
+
+
+{
+  "meta": {
+    "id": "b72fa252-092d-4762-834f-71f5c5871e4e",
+    "statusEmoji": "⚡️"
+  }
+}
+Sample Request
+
+
+
+curl https://api.up.com.au/api/v1/util/ping
+Sample Response
+
+
+
+{
+  "errors": [
+    {
+      "status": "401",
+      "title": "Not Authorized",
+      "detail": "The request was not authenticated because no valid credential was found in the Authorization header, or the Authorization header was not present."
+    }
+  ]
+}
+Webhooks
+Webhooks provide a mechanism for a configured URL to receive events when transaction activity occurs on Up. You can think of webhooks as being like push notifications for your server-side application.
+
+List webhooks
+GET /webhooks
+Retrieve a list of configured webhooks. The returned list is paginated and can be scrolled by following the next and prev links where present. Results are ordered oldest first to newest last.
+
+Query Parameters
+page[size]
+integer
+
+The number of records to return in each page.
+
+e.g. ?page[size]=30
+For the purposes of readability these examples are not correctly URL-encoded. Care should be taken to correctly encode URL parameters when calling the API. For example "+" must be encoded as "%2B" in order to be received as a plus-sign and not as a space character.
+Returns
+200 - Successful Response
+data
+Array [WebhookResource]
+
+The list of webhooks returned in this response.
+
+type
+string
+
+The type of this resource: webhooks
+
+id
+string
+
+The unique identifier for this webhook.
+
+attributes
+object
+
+url
+string
+
+The URL that this webhook is configured to POST events to.
+
+description
+string
+
+(nullable)
+An optional description that was provided at the time the webhook was created.
+
+secretKey
+string
+
+(optional)
+A shared secret key used to sign all webhook events sent to the configured webhook URL. This field is returned only once, upon the initial creation of the webhook. If lost, create a new webhook and delete this webhook.
+
+The webhook URL receives a request with a X-Up-Authenticity-Signature header, which is the SHA-256 HMAC of the entire raw request body signed using this secretKey. It is advised to compute and check this signature to verify the authenticity of requests sent to the webhook URL. See Handling webhook events for full details.
+
+createdAt
+string (date-time)
+
+The date-time at which this webhook was created.
+
+relationships
+object
+
+logs
+object
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+links
+object
+
+(optional)
+self
+string
+
+The canonical link to this resource within the API.
+
+links
+object
+
+prev
+string
+
+(nullable)
+The link to the previous page in the results. If this value is null there is no previous page.
+
+next
+string
+
+(nullable)
+The link to the next page in the results. If this value is null there is no next page.
+
+Sample Request
+
+
+
+curl https://api.up.com.au/api/v1/webhooks \
+  -G \
+  -H 'Authorization: Bearer up:demo:uJHFo9i3Qj56QhNc' \
+  -d 'page[size]=1'
+Sample Response
+
+
+
+{
+  "data": [
+    {
+      "type": "webhooks",
+      "id": "c3e2334c-b910-47a3-ab69-4153376e5116",
+      "attributes": {
+        "url": "http://example.com/webhook-1",
+        "description": "Webhook number 1",
+        "createdAt": "2025-02-05T08:44:03+11:00"
+      },
+      "relationships": {
+        "logs": {
+          "links": {
+            "related": "https://api.up.com.au/api/v1/webhooks/c3e2334c-b910-47a3-ab69-4153376e5116/logs"
+          }
+        }
+      },
+      "links": {
+        "self": "https://api.up.com.au/api/v1/webhooks/c3e2334c-b910-47a3-ab69-4153376e5116"
+      }
+    }
+  ],
+  "links": {
+    "prev": null,
+    "next": "https://api.up.com.au/api/v1/webhooks?page%5Bafter%5D=WyIyMDI1LTAyLTA0VDIxOjQ0OjAzLjEyNzMzMzAwMFoiLCJjM2UyMzM0Yy1iOTEwLTQ3YTMtYWI2OS00MTUzMzc2ZTUxMTYiXQ%3D%3D&page%5Bsize%5D=1"
+  }
+}
+Create webhook
+POST /webhooks
+Create a new webhook with a given URL. The URL will receive webhook events as JSON-encoded POST requests. The URL must respond with a HTTP 200 status on success.
+
+There is currently a limit of 10 webhooks at any given time. Once this limit is reached, existing webhooks will need to be deleted before new webhooks can be created.
+
+Event delivery is retried with exponential backoff if the URL is unreachable or it does not respond with a 200 status. The response includes a secretKey attribute, which is used to sign requests sent to the webhook URL. It will not be returned from any other endpoints within the Up API. If the secretKey is lost, simply create a new webhook with the same URL, capture its secretKey and then delete the original webhook. See Handling webhook events for details on how to process webhook events.
+
+It is probably a good idea to test the webhook by sending it a PING event after creating it.
+
+Request Payload
+data
+WebhookInputResource
+
+The webhook resource to create.
+
+attributes
+object
+
+url
+string (uri)
+
+The URL that this webhook should post events to. This must be a valid HTTP or HTTPS URL that does not exceed 300 characters in length.
+
+description
+string
+
+(nullable, optional)
+An optional description for this webhook, up to 64 characters in length.
+
+Returns
+201 - Created
+data
+WebhookResource
+
+The webhook that was created.
+
+type
+string
+
+The type of this resource: webhooks
+
+id
+string
+
+The unique identifier for this webhook.
+
+attributes
+object
+
+url
+string
+
+The URL that this webhook is configured to POST events to.
+
+description
+string
+
+(nullable)
+An optional description that was provided at the time the webhook was created.
+
+secretKey
+string
+
+(optional)
+A shared secret key used to sign all webhook events sent to the configured webhook URL. This field is returned only once, upon the initial creation of the webhook. If lost, create a new webhook and delete this webhook.
+
+The webhook URL receives a request with a X-Up-Authenticity-Signature header, which is the SHA-256 HMAC of the entire raw request body signed using this secretKey. It is advised to compute and check this signature to verify the authenticity of requests sent to the webhook URL. See Handling webhook events for full details.
+
+createdAt
+string (date-time)
+
+The date-time at which this webhook was created.
+
+relationships
+object
+
+logs
+object
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+links
+object
+
+(optional)
+self
+string
+
+The canonical link to this resource within the API.
+
+Sample Request
+
+
+
+curl https://api.up.com.au/api/v1/webhooks \
+  -XPOST \
+  -H 'Authorization: Bearer up:demo:FiLjUiLX4qJPKM51' \
+  -H 'Content-Type: application/json' \
+  --data-binary '{
+    "data": {
+      "attributes": {
+        "url": "http://example.com/webhook",
+        "description": "Example webhook"
+      }
+    }
+  }'
+Sample Response
+
+
+
+{
+  "data": {
+    "type": "webhooks",
+    "id": "7d26cb71-d117-4c1c-950b-5e980a17767a",
+    "attributes": {
+      "url": "http://example.com/webhook",
+      "description": "Example webhook",
+      "secretKey": "Rm1nLvAvm7GAgB609zbTtYHiMCu6FzJay6eiNRe2VPYatqs9OGqtizqOCOZ824YW",
+      "createdAt": "2025-02-07T08:44:03+11:00"
+    },
+    "relationships": {
+      "logs": {
+        "links": {
+          "related": "https://api.up.com.au/api/v1/webhooks/7d26cb71-d117-4c1c-950b-5e980a17767a/logs"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.up.com.au/api/v1/webhooks/7d26cb71-d117-4c1c-950b-5e980a17767a"
+    }
+  }
+}
+Retrieve webhook
+GET /webhooks/{id}
+Retrieve a specific webhook by providing its unique identifier.
+
+Path Parameters
+id
+string
+
+The unique identifier for the webhook.
+
+e.g. 68269861-91e9-4c9c-bb2c-29dd101b51f5
+Returns
+200 - Successful Response
+data
+WebhookResource
+
+The webhook returned in this response.
+
+type
+string
+
+The type of this resource: webhooks
+
+id
+string
+
+The unique identifier for this webhook.
+
+attributes
+object
+
+url
+string
+
+The URL that this webhook is configured to POST events to.
+
+description
+string
+
+(nullable)
+An optional description that was provided at the time the webhook was created.
+
+secretKey
+string
+
+(optional)
+A shared secret key used to sign all webhook events sent to the configured webhook URL. This field is returned only once, upon the initial creation of the webhook. If lost, create a new webhook and delete this webhook.
+
+The webhook URL receives a request with a X-Up-Authenticity-Signature header, which is the SHA-256 HMAC of the entire raw request body signed using this secretKey. It is advised to compute and check this signature to verify the authenticity of requests sent to the webhook URL. See Handling webhook events for full details.
+
+createdAt
+string (date-time)
+
+The date-time at which this webhook was created.
+
+relationships
+object
+
+logs
+object
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+links
+object
+
+(optional)
+self
+string
+
+The canonical link to this resource within the API.
+
+Sample Request
+
+
+
+curl https://api.up.com.au/api/v1/webhooks/132ce230-e14d-4d13-a4d3-0baa71eea790 \
+  -H 'Authorization: Bearer up:demo:YDRkXJnmsx8nillk'
+Sample Response
+
+
+
+{
+  "data": {
+    "type": "webhooks",
+    "id": "132ce230-e14d-4d13-a4d3-0baa71eea790",
+    "attributes": {
+      "url": "http://example.com/webhook-2",
+      "description": "Webhook number 2",
+      "createdAt": "2025-02-06T08:44:04+11:00"
+    },
+    "relationships": {
+      "logs": {
+        "links": {
+          "related": "https://api.up.com.au/api/v1/webhooks/132ce230-e14d-4d13-a4d3-0baa71eea790/logs"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.up.com.au/api/v1/webhooks/132ce230-e14d-4d13-a4d3-0baa71eea790"
+    }
+  }
+}
+Delete webhook
+DELETE /webhooks/{id}
+Delete a specific webhook by providing its unique identifier. Once deleted, webhook events will no longer be sent to the configured URL.
+
+Path Parameters
+id
+string
+
+The unique identifier for the webhook.
+
+e.g. 90cd9db6-3987-4b46-b727-c339b9dd7e40
+Returns
+204 - Deleted
+Sample Request
+
+
+
+curl https://api.up.com.au/api/v1/webhooks/642c1460-48af-4e9b-8741-f5937b377d34 \
+  -XDELETE \
+  -H 'Authorization: Bearer up:demo:RiK9MH8dfDnLF4E3'
+Ping webhook
+POST /webhooks/{webhookId}/ping
+Send a PING event to a webhook by providing its unique identifier. This is useful for testing and debugging purposes. The event is delivered asynchronously and its data is returned in the response to this request.
+
+Path Parameters
+webhookId
+string
+
+The unique identifier for the webhook.
+
+e.g. c26e3a62-6cbc-4963-98fd-7145710661e4
+Returns
+201 - Successful response
+data
+WebhookEventResource
+
+The webhook event data sent to the subscribed webhook.
+
+type
+string
+
+The type of this resource: webhook-events
+
+id
+string
+
+The unique identifier for this event. This will remain constant across delivery retries.
+
+attributes
+object
+
+eventType
+WebhookEventTypeEnum
+
+The type of this event. This can be used to determine what action to take in response to the event.
+
+createdAt
+string (date-time)
+
+The date-time at which this event was generated.
+
+relationships
+object
+
+webhook
+object
+
+data
+object
+
+type
+string
+
+The type of this resource: webhooks
+
+id
+string
+
+The unique identifier of the resource within its type.
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+transaction
+object
+
+(optional)
+data
+object
+
+type
+string
+
+The type of this resource: transactions
+
+id
+string
+
+The unique identifier of the resource within its type.
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+Sample Request
+
+
+
+curl https://api.up.com.au/api/v1/webhooks/c7983dbd-7510-451a-a824-21a0f13a3eaf/ping \
+  -XPOST \
+  -H 'Authorization: Bearer up:demo:EPw2mtrRbCmeIaMV' \
+  -H 'Content-Type: application/json' \
+  --data-binary ''
+Sample Response
+
+
+
+{
+  "data": {
+    "type": "webhook-events",
+    "id": "908f6925-d56e-4331-a0f2-a91d8278236d",
+    "attributes": {
+      "eventType": "PING",
+      "createdAt": "2025-02-07T08:44:06+11:00"
+    },
+    "relationships": {
+      "webhook": {
+        "data": {
+          "type": "webhooks",
+          "id": "c7983dbd-7510-451a-a824-21a0f13a3eaf"
+        },
+        "links": {
+          "related": "https://api.up.com.au/api/v1/webhooks/c7983dbd-7510-451a-a824-21a0f13a3eaf"
+        }
+      }
+    }
+  }
+}
+List webhook logs
+GET /webhooks/{webhookId}/logs
+Retrieve a list of delivery logs for a webhook by providing its unique identifier. This is useful for analysis and debugging purposes. The returned list is paginated and can be scrolled by following the next and prev links where present. Results are ordered newest first to oldest last. Logs may be automatically purged after a period of time.
+
+Path Parameters
+webhookId
+string
+
+The unique identifier for the webhook.
+
+e.g. 16102fcd-d892-4248-9c69-a8415bbd975c
+Query Parameters
+page[size]
+integer
+
+The number of records to return in each page.
+
+e.g. ?page[size]=30
+For the purposes of readability these examples are not correctly URL-encoded. Care should be taken to correctly encode URL parameters when calling the API. For example "+" must be encoded as "%2B" in order to be received as a plus-sign and not as a space character.
+Returns
+200 - Successful response
+data
+Array [WebhookDeliveryLogResource]
+
+The list of delivery logs returned in this response.
+
+type
+string
+
+The type of this resource: webhook-delivery-logs
+
+id
+string
+
+The unique identifier for this log entry.
+
+attributes
+object
+
+request
+object
+
+Information about the request that was sent to the webhook URL.
+
+body
+string
+
+The payload that was sent in the request body.
+
+response
+object
+
+(nullable)
+Information about the response that was received from the webhook URL.
+
+statusCode
+integer
+
+The HTTP status code received in the response.
+
+body
+string
+
+The payload that was received in the response body.
+
+deliveryStatus
+WebhookDeliveryStatusEnum
+
+The success or failure status of this delivery attempt.
+
+createdAt
+string (date-time)
+
+The date-time at which this log entry was created.
+
+relationships
+object
+
+webhookEvent
+object
+
+data
+object
+
+type
+string
+
+The type of this resource: webhook-events
+
+id
+string
+
+The unique identifier of the resource within its type.
+
+links
+object
+
+prev
+string
+
+(nullable)
+The link to the previous page in the results. If this value is null there is no previous page.
+
+next
+string
+
+(nullable)
+The link to the next page in the results. If this value is null there is no next page.
+
+Sample Request
+
+
+
+curl https://api.up.com.au/api/v1/webhooks/b90a3347-967c-4c80-8928-15e52311828f/logs \
+  -G \
+  -H 'Authorization: Bearer up:demo:HeVY0672Bkhe0UIQ' \
+  -d 'page[size]=1'
+Sample Response
+
+
+
+{
+  "data": [
+    {
+      "type": "webhook-delivery-logs",
+      "id": "1a71701f-4456-4e54-843e-48a6b34c9ca4",
+      "attributes": {
+        "request": {
+          "body": "{\"data\":{\"type\":\"webhook-events\",\"id\":\"b5b41633-1802-4544-8529-d633d6c7d524\",\"attributes\":{\"eventType\":\"TRANSACTION_CREATED\",\"createdAt\":\"2025-02-06T08:45:07+11:00\"},\"relationships\":{\"webhook\":{\"data\":{\"type\":\"webhooks\",\"id\":\"b90a3347-967c-4c80-8928-15e52311828f\"},\"links\":{\"related\":\"https://api.up.com.au/api/v1/webhooks/b90a3347-967c-4c80-8928-15e52311828f\"}},\"transaction\":{\"data\":{\"type\":\"transactions\",\"id\":\"196ece54-12ee-4a74-8053-13a192d7724a\"},\"links\":{\"related\":\"https://api.up.com.au/api/v1/transactions/196ece54-12ee-4a74-8053-13a192d7724a\"}}}}}"
+        },
+        "response": {
+          "statusCode": 200,
+          "body": "{\"ok\":true}"
+        },
+        "deliveryStatus": "DELIVERED",
+        "createdAt": "2025-02-06T08:45:07+11:00"
+      },
+      "relationships": {
+        "webhookEvent": {
+          "data": {
+            "type": "webhook-events",
+            "id": "b5b41633-1802-4544-8529-d633d6c7d524"
+          }
+        }
+      }
+    }
+  ],
+  "links": {
+    "prev": null,
+    "next": "https://api.up.com.au/api/v1/webhooks/b90a3347-967c-4c80-8928-15e52311828f/logs?page%5Bafter%5D=WyIyMDI1LTAyLTA1VDIxOjQ1OjA3Ljc2MzA1ODAwMFoiLCIxYTcxNzAxZi00NDU2LTRlNTQtODQzZS00OGE2YjM0YzljYTQiXQ%3D%3D&page%5Bsize%5D=1"
+  }
+}
+Handling webhook events
+POST {webhookURL}// webhook
+Once you have created a webhook in the Up API, events are sent to the webhook’s configured URL as JSON-encoded POST requests. The webhook URL must respond with a HTTP 200 status on success.
+
+It is important that the URL responds in a timely manner. If the URL takes too long to respond (currently 30s), the request will be timed out. For this reason it is strongly advised to avoid any heavy processing before a response has been returned from the URL. A common solution to this problem is to use a message broker such as RabbitMQ to do the work asynchronously.
+
+Event delivery is retried with exponential backoff in the case of any non-200 response status, if the URL is unreachable, or if the request is timed out.
+
+Refer to the eventType attribute in order to determine what course of action to take when handling the event. The following event types are currently sent:
+
+PING
+
+Manually triggered by calls to the webhook ping endpoint. Used for testing and debugging purposes.
+
+TRANSACTION_CREATED
+
+Triggered whenever a new transaction is created in Up. This event includes a transaction relationship that provides the unique identifier for the transaction and a link to the transaction within the Up API. This link should be used to retrieve the complete transaction data.
+
+TRANSACTION_SETTLED
+
+Triggered whenever a transaction transitions from the HELD status to the SETTLED status. This event includes a transaction relationship that provides the unique identifier for the transaction and a link to the transaction within the Up API. This link should be used to retrieve the complete transaction data.
+
+Due to external factors in banking processes, on rare occasions this event may not be triggered. Separate TRANSACTION_DELETED and TRANSACTION_CREATED events will be received in its place.
+
+TRANSACTION_DELETED
+
+Triggered whenever a HELD transaction is deleted from Up. This generally occurs for example when a hotel deposit is returned. This event includes a transaction relationship that provides the unique identifier for the transaction, however no link is provided to the transaction within the Up API as it no longer exists.
+
+Securing Webhook Event Handlers
+Incoming webhook event requests include a X-Up-Authenticity-Signature header, which can be used to verify that the event was sent by Up. Verification of the signature requires knowledge of the shared secretKey that was returned upon creation of the webhook. This key is known only to your application and to Up.
+
+The verification process involves:
+
+Taking the raw, unparsed webhook event request body.
+Computing the SHA-256 HMAC signature of the request body, using the shared secretKey.
+Comparing the computed HMAC signature with the value of the X-Up-Authenticity-Signature header.
+If the computed SHA-256 HMAC signature matches the X-Up-Authenticity-Signature header, the request is valid.
+
+A few language-specific examples follow.
+
+Ruby:
+
+This example uses the Ruby on Rails framework.
+
+require 'openssl'
+
+def handle_webhook_event
+  received_signature =
+    request.headers['X-Up-Authenticity-Signature']
+
+  signature = OpenSSL::HMAC.hexdigest(
+    'SHA256',
+    secret_key,
+    request.raw_post,
+  )
+
+  if Rack::Utils.secure_compare(received_signature, signature)
+    # Process webhook event
+  end
+end
+PHP:
+
+This example uses the Laravel framework.
+
+public function handleWebhookEvent(Request $request) {
+    $received_signature = $request->header(
+        'X-Up-Authenticity-Signature',
+        ''
+    );
+    $raw_body = $request->getContent();
+    $signature = hash_hmac('sha256', $raw_body, $this->secretKey);
+
+    if (hash_equals($signature, $received_signature)) {
+        // Process webhook event
+    }
+}
+Go:
+
+This example is in plain Go.
+
+import (
+    "crypto/hmac"
+    "crypto/sha256"
+    "encoding/hex"
+    "io"
+    "net/http"
+)
+
+func handleWebhookEvent(w http.ResponseWriter, r *http.Request) {
+    receivedSignature, _ := hex.DecodeString(
+        r.Header.Get("X-Up-Authenticity-Signature"),
+    )
+
+    mac := hmac.New(sha256.New, secretKey)
+    io.Copy(mac, r.Body)
+    signature := mac.Sum(nil)
+
+    if hmac.Equal(signature, receivedSignature)
+        // Process webhook event
+    }
+}
+If the secretKey for a webhook is lost, simply create a new webhook with the same URL, capture the returned secretKey and delete the original webhook.
+
+Request Headers
+X-Up-Authenticity-Signature
+string
+
+The SHA-256 HMAC signature of the raw request body, signed using the secretKey of the webhook.
+
+e.g. X-Up-Authenticity-Signature: 317c0a8ea81df3f53c1d2aef5dcbf60492d0df557197b2990e71daa4a0693364
+Request Payload
+data
+WebhookEventResource
+
+The webhook event data sent to the subscribed webhook.
+
+type
+string
+
+The type of this resource: webhook-events
+
+id
+string
+
+The unique identifier for this event. This will remain constant across delivery retries.
+
+attributes
+object
+
+eventType
+WebhookEventTypeEnum
+
+The type of this event. This can be used to determine what action to take in response to the event.
+
+createdAt
+string (date-time)
+
+The date-time at which this event was generated.
+
+relationships
+object
+
+webhook
+object
+
+data
+object
+
+type
+string
+
+The type of this resource: webhooks
+
+id
+string
+
+The unique identifier of the resource within its type.
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+transaction
+object
+
+(optional)
+data
+object
+
+type
+string
+
+The type of this resource: transactions
+
+id
+string
+
+The unique identifier of the resource within its type.
+
+links
+object
+
+(optional)
+related
+string
+
+The link to retrieve the related resource(s) in this relationship.
+
+Expected Response
+200 - Successful Response
+Sample Payload
+
+
+
+{
+  "data": {
+    "type": "webhook-events",
+    "id": "3a2b6437-1dd9-4782-b02d-7d268b864d1d",
+    "attributes": {
+      "eventType": "TRANSACTION_CREATED",
+      "createdAt": "2025-02-07T08:44:04+11:00"
+    },
+    "relationships": {
+      "webhook": {
+        "data": {
+          "type": "webhooks",
+          "id": "46a46c0a-9e6d-42f3-b476-0f072f0255bb"
+        },
+        "links": {
+          "related": "https://api.up.com.au/api/v1/webhooks/46a46c0a-9e6d-42f3-b476-0f072f0255bb"
+        }
+      },
+      "transaction": {
+        "data": {
+          "type": "transactions",
+          "id": "6d8c8d17-0962-4f2c-90f9-8d7ddd9d66b4"
+        },
+        "links": {
+          "related": "https://api.up.com.au/api/v1/transactions/6d8c8d17-0962-4f2c-90f9-8d7ddd9d66b4"
+        }
+      }
+    }
+  }
+}
