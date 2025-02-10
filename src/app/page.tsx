@@ -11,12 +11,12 @@ const styles = {
 export default function Home() {
   return (
     <main className="min-h-screen p-8 bg-[#ff705c]">
-      <div className="max-w-4xl mx-auto space-y-8">
+      <div className="max-w-4xl mx-auto space-y-16">
         <h1 className="text-4xl font-bold text-white text-center font-primary">
           Up Bank Voice Assistant
         </h1>
 
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="flex flex-col gap-12 max-w-xl mx-auto">
           <Link href="/chat">
             <Card className="h-64 transition-transform hover:scale-105 cursor-pointer">
               <CardContent className="h-full flex flex-col items-center justify-center p-6 space-y-4"
