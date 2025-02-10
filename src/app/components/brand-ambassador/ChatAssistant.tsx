@@ -209,24 +209,31 @@ const VoiceBankingAssistant = () => {
   const renderChatHistory = () => (
     <div
       ref={chatContainerRef}
-      className="space-y-4 mb-4 max-h-[400px] overflow-y-auto"
+      className="space-y-4 mb-4 p-1 max-h-[500px] overflow-y-auto border-2 border-[#ff705c] rounded-lg"
     >
       {messages.map((message, index) => (
         <div
           key={index}
-          className={`p-4 rounded-lg ${message.role === 'user'
-            ? `bg-[#489b98] border-b-[3px] border-l-[3px] border-r border-t border-[#ff705c] ml-12`
-            : `mr-12 bg-[#ff8bd1] border-b-[3px] border-r-[3px] border-l border-t border-[#ff705c]`
-            }`}
+          className="flex"
+          style={{
+            justifyContent: message.role === 'user' ? 'flex-end' : 'flex-start'
+          }}
         >
-          {message.content}
+          <div
+            className={`p-4 rounded-lg max-w-[80%] inline-block ${message.role === 'user'
+              ? `bg-[#489b98] border-b-[3px] border-l-[3px] border-r border-t border-[#ff705c]`
+              : `bg-[#ff8bd1] border-b-[3px] border-r-[3px] border-l border-t border-[#ff705c]`
+              }`}
+          >
+            {message.content}
+          </div>
         </div>
       ))}
     </div>
   );
 
   return (
-    <div style={{ backgroundColor: styles.upCoral }} className="flex justify-center items-start min-h-screen p-24">
+    <div style={{ backgroundColor: styles.upCoral }} className="flex justify-center items-start min-h-screen p-12">
       <Card className="w-full max-w-2xl mx-auto bg-[#ffee52] shadow-xl">
         <CardHeader style={{ backgroundColor: styles.upYellow }}>
           <div className="flex flex-col items-center space-y-4">
@@ -258,7 +265,7 @@ const VoiceBankingAssistant = () => {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="p-6">
+        <CardContent className="p-2">
           <div className="space-y-6">
             {messages.length === 0 ? (
               <div
