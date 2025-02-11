@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { encryptApiKey, testUpAPIKey } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 const styles = {
   upCoral: '#ff705c',
@@ -14,12 +16,42 @@ const styles = {
 export default function AccountPage() {
   const [apiKey, setApiKey] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [publicKey, setPublicKey] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    // Initialize session when component mounts
+    const initSession = async () => {
+      const response = await fetch('http://localhost:3010/auth/init-session', {
+        method: 'POST'
+      });
+      const { publicKey, sessionId } = await response.json();
+      setPublicKey(publicKey);
+      setSessionId(sessionId);
+    };
+
+    initSession();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
-    // TODO: Implement API key validation and storage
+    const response = await encryptApiKey(apiKey, publicKey!, sessionId!);
+    if (response.ok) {
+      router.push('/dashboard');
+    } else {
+      throw new Error('Failed to store credentials');
+    }
+
     setIsSubmitting(false);
+    const isValid = await testUpAPIKey(apiKey);
+    if (isValid) {
+      router.push('/dashboard');
+    } else {
+      console.log('API key is invalid');
+      alert('Invalid API key, please try again.');
+    }
   };
 
   return (
