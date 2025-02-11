@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import localFont from 'next/font/local'
+import { ZapSpinner } from '@/components/ui/ZapSpinner';
+import Link from 'next/link';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -62,6 +64,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${circular.variable} ${apercuMono.variable} antialiased`}
       >
+        <div className="fixed top-4 left-4">
+          <Link href="/">
+            <ZapSpinner />
+          </Link>
+        </div>
         {children}
       </body>
     </html>
