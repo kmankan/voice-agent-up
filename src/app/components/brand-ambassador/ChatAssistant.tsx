@@ -3,16 +3,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Mic, MicOff, MessageSquare } from 'lucide-react';
-
-// Declare the custom element type for TypeScript
-declare global {
-  interface Window {
-    webkitAudioContext: typeof AudioContext
-  }
-}
-
-const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3010';
+import { Mic, MicOff, Settings } from 'lucide-react';
+import Conversation from './ElevenLabsCall';
 
 // Style constants to match Up's exact colors
 const styles = {
@@ -22,127 +14,53 @@ const styles = {
   upDarkTeal: '#305555'
 };
 
-type Message = {
-  role: 'user' | 'assistant';
-  content: string;
-};
-
 const VoiceBankingAssistant = () => {
   const [isListening, setIsListening] = useState(false);
+  const [apiKey, setApiKey] = useState('');
+  const [response, setResponse] = useState('');
+  const [mode, setMode] = useState('general');
   const [question, setQuestion] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [chatMode, setChatMode] = useState<'text' | 'voice'>('text');
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-  const audioChunks = useRef<Blob[]>([]);
-  const chatContainerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (chatContainerRef.current) {
-      // automatically adjusts it to show the bottom of the content.
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-    }
-  }, [messages]);
-
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm'
-      });
-
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          console.log('Data available event:', e.data.type, e.data.size);
-          audioChunks.current.push(e.data);
-        }
-      };
-
-      recorder.onstop = () => {
-        console.log('Recording stopped, chunks:', audioChunks.current.length);
-        const audioBlob = new Blob(audioChunks.current, {
-          type: 'audio/webm'
-        });
-        console.log('Created blob:', audioBlob.type, audioBlob.size);
-        audioChunks.current = [];
-        handleRecordingComplete(audioBlob);
-      };
-
-      setMediaRecorder(recorder);
-      recorder.start(1000);
-      setIsListening(true);
-    } catch (err) {
-      console.error('Error accessing microphone:', err);
-    }
-  };
-
-  const stopRecording = async () => {
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-      mediaRecorder.stop();
-      mediaRecorder.stream.getTracks().forEach(track => track.stop());
-      setIsListening(false);
-    }
-  };
-
-  const handleRecordingComplete = async (audioBlob: Blob) => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${SERVER_URL}/chat/transcribe`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'audio/webm',
-          'Accept': 'application/json',
-        },
-        body: audioBlob,
-        mode: 'cors',
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      await handleSubmit(undefined, data.transcript);
-    } catch (error) {
-      console.error('Transcription failed:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const [displayedResponse, setDisplayedResponse] = useState('');
+  const fullResponseRef = useRef('');
 
   const handleListen = () => {
-    if (!isListening) {
-      startRecording();
-    } else {
-      stopRecording();
-    }
+    setIsListening(!isListening);
+    // Voice recognition logic would go here
   };
 
-  const handleSubmit = async (e?: React.FormEvent, transcript?: string) => {
+  const simulateStreaming = (text: string) => {
+    let index = 0;
+    fullResponseRef.current = text;
+    setDisplayedResponse('');
+
+    const interval = setInterval(() => {
+      if (index < text.length) {
+        const chunk = text.slice(index, index + 3); // Adjust chunk size as needed
+        setDisplayedResponse(prev => prev + chunk);
+        index += 3;
+      } else {
+        clearInterval(interval);
+      }
+    }, 0); // Changed from 1ms to 0ms for maximum speed
+  };
+
+  const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-
-    // Use transcript if provided, otherwise use question state
-    const messageContent = transcript || question;
-    if (!messageContent.trim()) return;
-
-    // Add user message immediately
-    const userMessage: Message = { role: 'user', content: messageContent };
-    setMessages(prev => [...prev, userMessage]);
+    if (!question.trim()) return;
 
     setIsLoading(true);
     try {
-      const response = await fetch(`${SERVER_URL}/chat/message`, {
+      console.log('question:', question);
+      const response = await fetch('/api/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: messageContent,
-          history: messages
-        }),
+        body: JSON.stringify({ question }),
       });
 
       const data = await response.json();
-      if (data.response) {
-        setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
+      if (data.answer) {
+        simulateStreaming(data.answer);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -152,139 +70,66 @@ const VoiceBankingAssistant = () => {
     }
   };
 
-  const renderInputMethod = () => {
-    if (chatMode === 'text') {
-      return (
-        <form onSubmit={handleSubmit} className="flex gap-2 items-center">
-          <textarea
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSubmit();
-                setQuestion('');
-              }
-            }}
-            className="flex-1 p-2 border rounded-lg bg-white opacity-80"
-            placeholder="Type your question here..."
-            rows={2}
-          />
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="flex px-6 py-2 rounded-full transition-colors duration-200"
-            style={{
-              backgroundColor: styles.upCoral,
-              color: 'white'
-            }}
-          >
-            {isLoading ? 'Thinking...' : 'Ask'}
-          </Button>
-        </form>
-      );
-    }
-
-    return (
-      <div className="flex justify-center">
-        <Button
-          onClick={handleListen}
-          className={`w-16 h-16 rounded-full transition-all duration-200 ${isListening ? 'bg-red-500 hover:bg-red-600' : 'bg-[#ff705c] hover:bg-[#e65a47]'
-            }`}
-          style={{
-            boxShadow: isListening ? '0 0 0 4px rgba(255, 112, 92, 0.3)' : 'none',
-          }}
-        >
-          {isListening ? (
-            <MicOff className="w-6 h-6 text-white animate-pulse" />
-          ) : (
-            <Mic className="w-6 h-6 text-white" />
-          )}
-        </Button>
-      </div>
-    );
-  };
-
-  // Replace the existing display div with this chat display
-  const renderChatHistory = () => (
-    <div
-      ref={chatContainerRef}
-      className="space-y-4 mb-4 p-1 max-h-[500px] overflow-y-auto border-2 border-[#ff705c] rounded-lg"
-    >
-      {messages.map((message, index) => (
-        <div
-          key={index}
-          className="flex"
-          style={{
-            justifyContent: message.role === 'user' ? 'flex-end' : 'flex-start'
-          }}
-        >
-          <div
-            className={`p-4 rounded-lg max-w-[80%] inline-block ${message.role === 'user'
-              ? `bg-[#489b98] border-b-[3px] border-l-[3px] border-r border-t border-[#ff705c]`
-              : `bg-[#ff8bd1] border-b-[3px] border-r-[3px] border-l border-t border-[#ff705c]`
-              }`}
-          >
-            {message.content}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-
   return (
-    <div style={{ backgroundColor: styles.upCoral }} className="flex justify-center items-start min-h-screen p-12">
-      <Card className="w-full max-w-2xl mx-auto bg-[#ffee52] shadow-xl">
+    <div style={{ backgroundColor: styles.upCoral }} className="min-h-screen p-4">
+      <Card className="w-full max-w-2xl mx-auto bg-white shadow-xl">
         <CardHeader style={{ backgroundColor: styles.upYellow }}>
-          <div className="flex flex-col items-center space-y-4">
-            <CardTitle className="flex justify-center items-center w-full">
-              <span style={{ color: styles.upCoral }} className="text-2xl font-bold">
-                Up Voice Assistant
-              </span>
-            </CardTitle>
-
-            <div className="flex bg-white rounded-full p-1 shadow-sm">
-              <Button
-                variant="ghost"
-                className={`rounded-full px-6 transition-colors ${chatMode === 'text' ? 'bg-[#ff705c] text-white' : 'text-[#ff705c]'
-                  }`}
-                onClick={() => setChatMode('text')}
-              >
-                <MessageSquare className="w-4 h-4 mr-2" />
-                Text Chat
-              </Button>
-              <Button
-                variant="ghost"
-                className={`rounded-full px-6 transition-colors ${chatMode === 'voice' ? 'bg-[#ff705c] text-white' : 'text-[#ff705c]'
-                  }`}
-                onClick={() => setChatMode('voice')}
-              >
-                <Mic className="w-4 h-4 mr-2" />
-                Voice Chat
-              </Button>
-            </div>
-          </div>
+          <CardTitle className="flex justify-between items-center">
+            <span style={{ color: styles.upCoral }} className="text-2xl font-bold">
+              Up Voice Assistant
+            </span>
+            <Button variant="ghost" size="icon">
+              <Settings style={{ color: styles.upCoral }} className="h-5 w-5" />
+            </Button>
+          </CardTitle>
         </CardHeader>
-        <CardContent className="p-2">
+        <CardContent className="p-6">
           <div className="space-y-6">
-            {messages.length === 0 ? (
-              <div
-                className="rounded-lg p-6 min-h-32 border"
+            <div className="flex justify-center">
+
+            </div>
+
+            <div
+              className="rounded-lg p-6 min-h-32 border"
+              style={{
+                backgroundColor: styles.upYellow + '20',
+                borderColor: styles.upYellow,
+                color: styles.upCoral
+              }}
+            >
+              {displayedResponse || 'Ask me anything about Up Bank...'}
+            </div>
+
+            <form onSubmit={handleSubmit} className="flex gap-2">
+              <textarea
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmit();
+                  }
+                }}
+                className="flex-1 p-2 border rounded-lg"
+                placeholder="Type your question here..."
+                rows={2}
+              />
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="px-6 py-2 rounded-full transition-colors duration-200"
                 style={{
-                  backgroundColor: styles.upYellow + '20',
-                  borderColor: styles.upCoral,
-                  color: styles.upCoral
+                  backgroundColor: styles.upCoral,
+                  color: 'white'
                 }}
               >
-                Ask me anything about Up Bank...
-              </div>
-            ) : (
-              renderChatHistory()
-            )}
-            {renderInputMethod()}
+                {isLoading ? 'Thinking...' : 'Ask'}
+              </Button>
+            </form>
           </div>
         </CardContent>
       </Card>
+      <elevenlabs-convai agent-id="WHNNSSM163qXbSMw9Efe"></elevenlabs-convai><script src="https://elevenlabs.io/convai-widget/index.js" async type="text/javascript"></script>
     </div>
   );
 }
