@@ -209,7 +209,7 @@ const VoiceBankingAssistant = () => {
   const renderChatHistory = () => (
     <div
       ref={chatContainerRef}
-      className="space-y-4 mb-4 p-1 max-h-[500px] overflow-y-auto border-2 border-[#ff705c] rounded-lg"
+      className="space-y-4 mb-4 p-1 max-h-[500px] overflow-y-auto border border-black border-dotted rounded-lg"
     >
       {messages.map((message, index) => (
         <div
@@ -234,7 +234,7 @@ const VoiceBankingAssistant = () => {
 
   return (
     <div style={{ backgroundColor: styles.upCoral }} className="flex justify-center items-start min-h-screen p-12">
-      <Card className="w-full max-w-2xl mx-auto bg-[#ffee52] shadow-xl">
+      <Card className="w-full max-w-2xl mx-auto bg-[#ffee52] border-2 border-black overflow-hidden p-2">
         <CardHeader style={{ backgroundColor: styles.upYellow }}>
           <div className="flex flex-col items-center space-y-4">
             <CardTitle className="flex justify-center items-center w-full">
