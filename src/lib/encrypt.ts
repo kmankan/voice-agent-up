@@ -2,11 +2,11 @@ export async function encrypt(text: string, publicKey: string): Promise<string> 
   // Convert PEM public key to format needed by SubtleCrypto
   const pemHeader = '-----BEGIN PUBLIC KEY-----';
   const pemFooter = '-----END PUBLIC KEY-----';
-  const pemContents = publicKey.substring(
-    pemHeader.length,
-    publicKey.length - pemFooter.length
-  );
-  const binaryDer = window.atob(pemContents);
+  const pemContents = publicKey
+    .replace(pemHeader, '')
+    .replace(pemFooter, '')
+    .replace(/\n/g, ''); // Remove all newlines
+  const binaryDer = window.atob(pemContents.trim());
   const binaryArray = new Uint8Array(binaryDer.length);
   for (let i = 0; i < binaryDer.length; i++) {
     binaryArray[i] = binaryDer.charCodeAt(i);
@@ -33,6 +33,6 @@ export async function encrypt(text: string, publicKey: string): Promise<string> 
     data
   );
 
-  // Convert to base64 -- OUT OF DATE REPLACE THIS WITH THE NEW ENCRYPTION METHOD
+  // ! Convert to base64 -- OUT OF DATE REPLACE THIS WITH THE NEW ENCRYPTION METHOD
   return btoa(String.fromCharCode(...new Uint8Array(encrypted)));
 }

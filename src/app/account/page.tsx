@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { encryptApiKey, testUpAPIKey } from '@/lib/utils';
@@ -13,8 +13,14 @@ const styles = {
   upDarkTeal: '#305555'
 };
 
+export type CreateSessionResponse = {
+  sessionId: string;
+  publicKey: string;
+}
+
 export default function AccountPage() {
-  const [apiKey, setApiKey] = useState('');
+  const apiKeyRef = useRef<HTMLInputElement>(null);
+  //const [encryptedApiKey, setEncryptedApiKey] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -26,9 +32,14 @@ export default function AccountPage() {
       const response = await fetch('http://localhost:3010/auth/init-session', {
         method: 'POST'
       });
-      const { publicKey, sessionId } = await response.json();
-      setPublicKey(publicKey);
-      setSessionId(sessionId);
+      const data: CreateSessionResponse = await response.json();
+      if (data.publicKey && data.sessionId) {
+        console.log('🔑 Session initialized:', data);
+        setPublicKey(data.publicKey);
+        setSessionId(data.sessionId);
+      } else {
+        console.error('❌ Session initialization failed');
+      }
     };
 
     initSession();
@@ -37,20 +48,40 @@ export default function AccountPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
-    const response = await encryptApiKey(apiKey, publicKey!, sessionId!);
-    if (response.ok) {
-      router.push('/dashboard');
-    } else {
-      throw new Error('Failed to store credentials');
-    }
+    console.log('🚀 Starting API key submission...');
 
-    setIsSubmitting(false);
-    const isValid = await testUpAPIKey(apiKey);
-    if (isValid) {
-      router.push('/dashboard');
-    } else {
-      console.log('API key is invalid');
-      alert('Invalid API key, please try again.');
+    try {
+      const apiKeyValue = apiKeyRef.current?.value.trim() || '';
+      // Encrypt and validate
+      const response = await encryptApiKey(apiKeyValue, publicKey!, sessionId!);
+      //setEncryptedApiKey(response.encryptedApiKey);
+
+      if (response.success) {
+        console.log('🔍 Verifying session...');
+        const verifySession = await fetch('http://localhost:3010/auth/verify-session', {
+          credentials: 'include' // Important: includes cookies in the request
+        });
+
+        if (verifySession.ok) {
+          console.log('✅ Session verified, redirecting to dashboard...');
+          router.push('/dashboard');
+        } else {
+          console.log('❌ Session verification failed');
+          throw new Error('Session verification failed');
+        }
+      } else {
+        console.log('❌ Failed to store credentials');
+        throw new Error('Failed to store credentials');
+      }
+    } catch (error) {
+      console.error('❌ Error processing API key:', error);
+      alert('An error occurred. Please try again.');
+    } finally {
+      // Clear the input for security
+      if (apiKeyRef.current) {
+        apiKeyRef.current.value = '';
+      }
+      setIsSubmitting(false);
     }
   };
 
@@ -75,13 +106,15 @@ export default function AccountPage() {
                 Up Bank API Key
               </label>
               <input
+                ref={apiKeyRef}
                 id="apiKey"
                 type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
                 className="w-full p-2 border rounded-lg"
                 placeholder="up:yeah:..."
                 required
+                aria-label="Up Bank API Key"
+                autoComplete="off"
+                spellCheck="false"
               />
               <p className="text-sm text-gray-500">
                 You can find your API key in the Up app under Profile → API Access
