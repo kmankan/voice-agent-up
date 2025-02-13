@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Mic, MicOff, MessageSquare } from 'lucide-react';
+import { Mic, MicOff, MessageSquare, Phone } from 'lucide-react';
 
 // Declare the custom element type for TypeScript
 declare global {
@@ -19,7 +19,8 @@ const styles = {
   upCoral: '#ff705c',
   upYellow: '#ffee52',
   upTeal: '#489b98',
-  upDarkTeal: '#305555'
+  upDarkTeal: '#305555',
+  upPink: '#ff8bd1'
 };
 
 type Message = {
@@ -31,8 +32,9 @@ const VoiceBankingAssistant = () => {
   const [isListening, setIsListening] = useState(false);
   const [question, setQuestion] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [chatMode, setChatMode] = useState<'text' | 'voice'>('text');
+  const [chatMode, setChatMode] = useState<'text' | 'voice' | 'agent'>('text');
   const [messages, setMessages] = useState<Message[]>([]);
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -152,6 +154,32 @@ const VoiceBankingAssistant = () => {
     }
   };
 
+  const handleCallAgent = async () => {
+    // This is a placeholder function - implement actual agent connection logic here
+    // phone number validation
+    if (!phoneNumber || phoneNumber.trim().length < 10) {
+      alert('Please enter a valid phone number');
+      return;
+    }
+
+    console.log('Calling agent...');
+    const response = await fetch(`${SERVER_URL}/bland/call`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phoneNumber: phoneNumber
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to initiate call');
+    }
+
+    // Handle successful response
+    const data = await response.json();
+    console.log('Bland call created:', data);
+  };
+
   const renderInputMethod = () => {
     if (chatMode === 'text') {
       return (
@@ -184,32 +212,37 @@ const VoiceBankingAssistant = () => {
         </form>
       );
     }
-
-    return (
-      <div className="flex justify-center">
-        <Button
-          onClick={handleListen}
-          className={`w-16 h-16 rounded-full transition-all duration-200 ${isListening ? 'bg-red-500 hover:bg-red-600' : 'bg-[#ff705c] hover:bg-[#e65a47]'
-            }`}
-          style={{
-            boxShadow: isListening ? '0 0 0 4px rgba(255, 112, 92, 0.3)' : 'none',
-          }}
-        >
-          {isListening ? (
-            <MicOff className="w-6 h-6 text-white animate-pulse" />
-          ) : (
-            <Mic className="w-6 h-6 text-white" />
-          )}
-        </Button>
-      </div>
-    );
+    else if (chatMode === 'voice') {
+      return (
+        <div className="flex justify-center">
+          <Button
+            onClick={handleListen}
+            className={`w-16 h-16 rounded-full transition-all duration-200 ${isListening ? 'bg-red-500 hover:bg-red-600' : 'bg-[#ff705c] hover:bg-[#e65a47]'
+              }`}
+            style={{
+              boxShadow: isListening ? '0 0 0 4px rgba(255, 112, 92, 0.3)' : 'none',
+            }}
+          >
+            {isListening ? (
+              <MicOff className="w-6 h-6 text-white animate-pulse" />
+            ) : (
+              <Mic className="w-6 h-6 text-white" />
+            )}
+          </Button>
+        </div>
+      );
+    } else if (chatMode === 'agent') {
+      return (
+        null
+      );
+    };
   };
 
   // Replace the existing display div with this chat display
   const renderChatHistory = () => (
     <div
       ref={chatContainerRef}
-      className="space-y-4 mb-4 p-1 max-h-[500px] overflow-y-auto border border-black border-dotted rounded-lg"
+      className="space-y-4 mb-4 p-1 max-h-[500px] overflow-y-auto rounded-lg"
     >
       {messages.map((message, index) => (
         <div
@@ -243,10 +276,13 @@ const VoiceBankingAssistant = () => {
               </span>
             </CardTitle>
 
-            <div className="flex bg-white rounded-full p-1 shadow-sm">
+            <div className="flex bg-neutral-100 rounded-full p-1 shadow-sm">
               <Button
                 variant="ghost"
-                className={`rounded-full px-6 transition-colors ${chatMode === 'text' ? 'bg-[#ff705c] text-white' : 'text-[#ff705c]'
+                className={`rounded-full px-6 transition-colors 
+                  ${chatMode === 'text'
+                    ? 'bg-[#ff705c] text-white hover:bg-[#ff705c]/90 hover:text-white'
+                    : 'text-[#ff705c] hover:bg-[#ff705c]/10 hover:text-[#ff705c]'
                   }`}
                 onClick={() => setChatMode('text')}
               >
@@ -255,12 +291,27 @@ const VoiceBankingAssistant = () => {
               </Button>
               <Button
                 variant="ghost"
-                className={`rounded-full px-6 transition-colors ${chatMode === 'voice' ? 'bg-[#ff705c] text-white' : 'text-[#ff705c]'
+                className={`rounded-full px-6 transition-colors 
+                  ${chatMode === 'voice'
+                    ? 'bg-[#ff705c] text-white hover:bg-[#ff705c]/90 hover:text-white'
+                    : 'text-[#ff705c] hover:bg-[#ff705c]/10 hover:text-[#ff705c]'
                   }`}
                 onClick={() => setChatMode('voice')}
               >
                 <Mic className="w-4 h-4 mr-2" />
                 Voice Chat
+              </Button>
+              <Button
+                variant="ghost"
+                className={`rounded-full px-6 transition-colors 
+                  ${chatMode === 'agent'
+                    ? 'bg-[#ff705c] text-white hover:bg-[#ff705c]/90 hover:text-white'
+                    : 'text-[#ff705c] hover:bg-[#ff705c]/10 hover:text-[#ff705c]'
+                  }`}
+                onClick={() => setChatMode('agent')}
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Talk to an Agent
               </Button>
             </div>
           </div>
@@ -271,12 +322,28 @@ const VoiceBankingAssistant = () => {
               <div
                 className="rounded-lg p-6 min-h-32 border"
                 style={{
-                  backgroundColor: styles.upYellow + '20',
+                  backgroundColor: chatMode === 'agent' ? styles.upTeal : styles.upYellow,
                   borderColor: styles.upCoral,
-                  color: styles.upCoral
+                  color: chatMode === 'agent' ? 'black' : styles.upCoral
                 }}
               >
-                Ask me anything about Up Bank...
+                {chatMode === 'agent' ? 'Enter your full phone number to immediately connect with an agent:' : 'Ask me anything about Up Bank...'}
+                {chatMode === 'agent' && (
+                  <div className="flex items-center mt-2">
+                    <input
+                      type="tel"
+                      className="h-10 w-1/2 rounded-lg p-2 bg-neutral-100"
+                      placeholder="+61412345678"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                    />
+                    <Button
+                      className='h-10 m-1'
+                      onClick={handleCallAgent}>
+                      <Phone className='w-4 h-4' />
+                    </Button>
+                  </div>
+                )}
               </div>
             ) : (
               renderChatHistory()
