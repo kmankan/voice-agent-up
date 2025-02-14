@@ -176,8 +176,8 @@ export default function Dashboard() {
                         </p>
                       </div>
                       <div className={`text-lg font-medium ${transaction.attributes.amount.value.startsWith('-')
-                        ? 'text-red-600'
-                        : 'text-green-600'
+                        ? 'text-red-900'
+                        : 'text-green-200'
                         }`}>
                         {transaction.attributes.amount.value.startsWith('-') ? '' : '+'}
                         {transaction.attributes.amount.value} {transaction.attributes.amount.currencyCode}
@@ -195,7 +195,7 @@ export default function Dashboard() {
                           </Badge>
                         )}
                         {transaction.relationships.category?.data && (
-                          <Badge variant="outline">
+                          <Badge variant="outline" className="bg-[#71f38b] text-black">
                             {transaction.relationships.category.data.id}
                           </Badge>
                         )}
