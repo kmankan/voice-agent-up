@@ -28,11 +28,14 @@ type Message = {
   content: string;
 };
 
+// Update the type to remove 'voice' option
+type ChatMode = 'text' | 'agent';
+
 const VoiceBankingAssistant = () => {
   const [isListening, setIsListening] = useState(false);
   const [question, setQuestion] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [chatMode, setChatMode] = useState<'text' | 'voice' | 'agent'>('text');
+  const [chatMode, setChatMode] = useState<ChatMode>('text');
   const [messages, setMessages] = useState<Message[]>([]);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
@@ -104,6 +107,7 @@ const VoiceBankingAssistant = () => {
       }
 
       const data = await response.json();
+      console.log('transcribed', data)
       await handleSubmit(undefined, data.transcript);
     } catch (error) {
       console.error('Transcription failed:', error);
@@ -180,10 +184,34 @@ const VoiceBankingAssistant = () => {
     console.log('Bland call created:', data);
   };
 
+  const handleModeChange = (mode: 'text' | 'agent') => {
+    setChatMode(mode);
+    setMessages([]); // Reset messages when changing modes
+    setQuestion(''); // Reset any pending question
+    if (isListening) {
+      stopRecording(); // Stop any ongoing recording
+    }
+  };
+
   const renderInputMethod = () => {
     if (chatMode === 'text') {
       return (
         <form onSubmit={handleSubmit} className="flex gap-2 items-center">
+          <Button
+            onClick={handleListen}
+            className={`w-12 h-12 rounded-full transition-all duration-200 ${isListening ? 'bg-red-500 hover:bg-red-600' : 'bg-[#ff705c] hover:bg-[#e65a47]'
+              }`}
+            style={{
+              boxShadow: isListening ? '0 0 0 4px rgba(255, 112, 92, 0.3)' : 'none',
+            }}
+            type="button"
+          >
+            {isListening ? (
+              <MicOff className="w-5 h-5 text-white animate-pulse" />
+            ) : (
+              <Mic className="w-5 h-5 text-white" />
+            )}
+          </Button>
           <textarea
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
@@ -211,31 +239,9 @@ const VoiceBankingAssistant = () => {
           </Button>
         </form>
       );
-    }
-    else if (chatMode === 'voice') {
-      return (
-        <div className="flex justify-center">
-          <Button
-            onClick={handleListen}
-            className={`w-16 h-16 rounded-full transition-all duration-200 ${isListening ? 'bg-red-500 hover:bg-red-600' : 'bg-[#ff705c] hover:bg-[#e65a47]'
-              }`}
-            style={{
-              boxShadow: isListening ? '0 0 0 4px rgba(255, 112, 92, 0.3)' : 'none',
-            }}
-          >
-            {isListening ? (
-              <MicOff className="w-6 h-6 text-white animate-pulse" />
-            ) : (
-              <Mic className="w-6 h-6 text-white" />
-            )}
-          </Button>
-        </div>
-      );
     } else if (chatMode === 'agent') {
-      return (
-        null
-      );
-    };
+      return null;
+    }
   };
 
   // Replace the existing display div with this chat display
@@ -284,22 +290,10 @@ const VoiceBankingAssistant = () => {
                     ? 'bg-[#ff705c] text-white hover:bg-[#ff705c]/90 hover:text-white'
                     : 'text-[#ff705c] hover:bg-[#ff705c]/10 hover:text-[#ff705c]'
                   }`}
-                onClick={() => setChatMode('text')}
+                onClick={() => handleModeChange('text')}
               >
                 <MessageSquare className="w-4 h-4 mr-2" />
                 Text Chat
-              </Button>
-              <Button
-                variant="ghost"
-                className={`rounded-full px-6 transition-colors 
-                  ${chatMode === 'voice'
-                    ? 'bg-[#ff705c] text-white hover:bg-[#ff705c]/90 hover:text-white'
-                    : 'text-[#ff705c] hover:bg-[#ff705c]/10 hover:text-[#ff705c]'
-                  }`}
-                onClick={() => setChatMode('voice')}
-              >
-                <Mic className="w-4 h-4 mr-2" />
-                Voice Chat
               </Button>
               <Button
                 variant="ghost"
@@ -308,7 +302,7 @@ const VoiceBankingAssistant = () => {
                     ? 'bg-[#ff705c] text-white hover:bg-[#ff705c]/90 hover:text-white'
                     : 'text-[#ff705c] hover:bg-[#ff705c]/10 hover:text-[#ff705c]'
                   }`}
-                onClick={() => setChatMode('agent')}
+                onClick={() => handleModeChange('agent')}
               >
                 <MessageSquare className="w-4 h-4 mr-2" />
                 Talk to an Agent
