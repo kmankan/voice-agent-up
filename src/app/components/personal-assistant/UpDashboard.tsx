@@ -133,175 +133,190 @@ export default function Dashboard() {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-3xl text-center font-bold mb-6">Recent Transactions</h1>
+      <h1 className="text-5xl text-center font-circular font-bold mb-8 text-[#ffee52]">Recent Transactions</h1>
 
-      {/* Search Bar */}
-      <div className="max-w-2xl mx-auto mb-6">
-        <input
-          type="text"
-          placeholder="Search transactions..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        />
-      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div id="insights" className="h-[85vh] border-2 border-white rounded-lg p-4">
+          <h2 className="text-2xl font-circular font-bold mb-6 text-[#ffee52]">
+            Insights
+          </h2>
+        </div>
+        <div id="transactions" className="h-[85vh] flex flex-col">
+          {/* Search Bar - keep outside of scroll area */}
+          <div className="w-full mx-auto mb-6">
+            <input
+              type="text"
+              placeholder="Search transactions..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
 
-      <div className="flex flex-col items-center gap-4 w-full max-w-2xl mx-auto">
-        {filteredTransactions?.map((transaction) => (
-          <Card
-            key={transaction.id}
-            onClick={() => toggleExpand(transaction.id)}
-            className="w-full cursor-pointer hover:shadow-lg transition-shadow"
-          >
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-start">
-                <div className="space-y-1">
-                  <h3 className="font-semibold text-lg leading-none">
-                    {transaction.attributes.description || 'Unnamed Transaction'}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {transaction.attributes.rawText || 'No details available'}
-                  </p>
-                </div>
-                <div className={`text-lg font-medium ${transaction.attributes.amount.value.startsWith('-')
-                  ? 'text-red-600'
-                  : 'text-green-600'
-                  }`}>
-                  {transaction.attributes.amount.value.startsWith('-') ? '' : '+'}
-                  {transaction.attributes.amount.value} {transaction.attributes.amount.currencyCode}
-                </div>
-              </div>
-            </CardHeader>
-
-            <CardContent>
-              <div className="space-y-2">
-                {/* Categories */}
-                <div className="flex gap-2">
-                  {transaction.relationships.parentCategory?.data && (
-                    <Badge variant="secondary">
-                      {transaction.relationships.parentCategory.data.id}
-                    </Badge>
-                  )}
-                  {transaction.relationships.category?.data && (
-                    <Badge variant="outline">
-                      {transaction.relationships.category.data.id}
-                    </Badge>
-                  )}
-                </div>
-
-                {/* Status Badge */}
-                <div>
-                  <Badge variant={transaction.attributes.status === 'SETTLED' ? 'default' : 'secondary'}>
-                    {transaction.attributes.status}
-                  </Badge>
-                </div>
-              </div>
-
-              {/* Expanded content remains the same */}
-              {expandedId === transaction.id && (
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <div className="space-y-3 text-sm">
-                    {/* Transaction ID */}
-                    <div className="text-gray-500 font-mono text-xs">
-                      ID: {transaction.id}
+          {/* Scrollable transaction list */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="flex flex-col items-center gap-4 w-full max-w-2xl mx-auto pb-4">
+              {filteredTransactions?.map((transaction) => (
+                <Card
+                  key={transaction.id}
+                  onClick={() => toggleExpand(transaction.id)}
+                  className={`w-full cursor-pointer hover:shadow-lg transition-shadow ${transaction.attributes.amount.value.startsWith('-')
+                    ? 'bg-[#ff8bd1]'
+                    : 'bg-[#489b98]'
+                    }`}
+                >
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-1">
+                        <h3 className="font-semibold text-lg leading-none text-[#ffee52]">
+                          {transaction.attributes.description || 'Unnamed Transaction'}
+                        </h3>
+                        <p className="text-sm text-muted-foreground text-black">
+                          {transaction.attributes.rawText || 'No details available'}
+                        </p>
+                      </div>
+                      <div className={`text-lg font-medium ${transaction.attributes.amount.value.startsWith('-')
+                        ? 'text-red-600'
+                        : 'text-green-600'
+                        }`}>
+                        {transaction.attributes.amount.value.startsWith('-') ? '' : '+'}
+                        {transaction.attributes.amount.value} {transaction.attributes.amount.currencyCode}
+                      </div>
                     </div>
+                  </CardHeader>
 
-                    {/* Transaction Type & Status */}
-                    <div className="flex gap-2 flex-wrap">
-                      <span className="inline-block px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-800">
-                        {transaction.attributes.transactionType}
-                      </span>
-                      {transaction.attributes.isCategorizable && (
-                        <span className="inline-block px-2 py-1 text-xs rounded-full bg-blue-50 text-blue-600">
-                          Categorizable
-                        </span>
-                      )}
-                    </div>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {/* Categories */}
+                      <div className="flex gap-2">
+                        {transaction.relationships.parentCategory?.data && (
+                          <Badge variant="secondary">
+                            {transaction.relationships.parentCategory.data.id}
+                          </Badge>
+                        )}
+                        {transaction.relationships.category?.data && (
+                          <Badge variant="outline">
+                            {transaction.relationships.category.data.id}
+                          </Badge>
+                        )}
+                      </div>
 
-                    {/* Additional Details */}
-                    <div className="space-y-1 text-gray-600">
-                      {transaction.attributes.message && (
-                        <div>
-                          <span className="font-medium">Message:</span>
-                          <p className="italic">&quot;{transaction.attributes.message}&quot;</p>
-                        </div>
-                      )}
-
-                      {transaction.attributes.cardPurchaseMethod && (
-                        <div>
-                          <span className="font-medium">Payment:</span>
-                          {' '}{transaction.attributes.cardPurchaseMethod.method}
-                          {' '}(*{transaction.attributes.cardPurchaseMethod.cardNumberSuffix})
-                        </div>
-                      )}
-
+                      {/* Status Badge */}
                       <div>
-                        <span className="font-medium">Created:</span>
-                        {' '}{formatDate(transaction.attributes.createdAt)}
+                        <Badge variant={transaction.attributes.status === 'SETTLED' ? 'default' : 'secondary'}>
+                          {transaction.attributes.status}
+                        </Badge>
                       </div>
-
-                      {transaction.attributes.settledAt && (
-                        <div>
-                          <span className="font-medium">Settled:</span>
-                          {' '}{formatDate(transaction.attributes.settledAt)}
-                        </div>
-                      )}
-
-                      {transaction.attributes.performingCustomer && (
-                        <div>
-                          <span className="font-medium">By:</span>
-                          {' '}{transaction.attributes.performingCustomer.displayName}
-                        </div>
-                      )}
-
-                      {transaction.relationships.account?.data && (
-                        <div>
-                          <span className="font-medium">Account:</span>
-                          {' '}{transaction.relationships.account.data.id}
-                        </div>
-                      )}
                     </div>
 
-                    {/* Tags */}
-                    {transaction.relationships.tags?.data.length > 0 && (
-                      <div className="flex gap-1 flex-wrap">
-                        {transaction.relationships.tags.data.map((tag, index) => (
-                          <span
-                            key={index}
-                            className="inline-block px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700"
-                          >
-                            #{tag.id}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                    {/* Expanded content remains the same */}
+                    {expandedId === transaction.id && (
+                      <div className="mt-4 pt-4 border-t border-gray-100">
+                        <div className="space-y-3 text-sm">
+                          {/* Transaction ID */}
+                          <div className="text-gray-500 font-mono text-xs">
+                            ID: {transaction.id}
+                          </div>
 
-                    {/* Attachment Indicator */}
-                    {transaction.relationships.attachment?.data && (
-                      <div className="text-blue-600">
-                        <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                        </svg>
-                        Has attachment
+                          {/* Transaction Type & Status */}
+                          <div className="flex gap-2 flex-wrap">
+                            <span className="inline-block px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-800">
+                              {transaction.attributes.transactionType}
+                            </span>
+                            {transaction.attributes.isCategorizable && (
+                              <span className="inline-block px-2 py-1 text-xs rounded-full bg-blue-50 text-blue-600">
+                                Categorizable
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Additional Details */}
+                          <div className="space-y-1 text-gray-600">
+                            {transaction.attributes.message && (
+                              <div>
+                                <span className="font-medium">Message:</span>
+                                <p className="italic">&quot;{transaction.attributes.message}&quot;</p>
+                              </div>
+                            )}
+
+                            {transaction.attributes.cardPurchaseMethod && (
+                              <div>
+                                <span className="font-medium">Payment:</span>
+                                {' '}{transaction.attributes.cardPurchaseMethod.method}
+                                {' '}(*{transaction.attributes.cardPurchaseMethod.cardNumberSuffix})
+                              </div>
+                            )}
+
+                            <div>
+                              <span className="font-medium">Created:</span>
+                              {' '}{formatDate(transaction.attributes.createdAt)}
+                            </div>
+
+                            {transaction.attributes.settledAt && (
+                              <div>
+                                <span className="font-medium">Settled:</span>
+                                {' '}{formatDate(transaction.attributes.settledAt)}
+                              </div>
+                            )}
+
+                            {transaction.attributes.performingCustomer && (
+                              <div>
+                                <span className="font-medium">By:</span>
+                                {' '}{transaction.attributes.performingCustomer.displayName}
+                              </div>
+                            )}
+
+                            {transaction.relationships.account?.data && (
+                              <div>
+                                <span className="font-medium">Account:</span>
+                                {' '}{transaction.relationships.account.data.id}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Tags */}
+                          {transaction.relationships.tags?.data.length > 0 && (
+                            <div className="flex gap-1 flex-wrap">
+                              {transaction.relationships.tags.data.map((tag, index) => (
+                                <span
+                                  key={index}
+                                  className="inline-block px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700"
+                                >
+                                  #{tag.id}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Attachment Indicator */}
+                          {transaction.relationships.attachment?.data && (
+                            <div className="text-blue-600">
+                              <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                              </svg>
+                              Has attachment
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Debug view - moved inside scroll area */}
+            <details className="mt-8 mx-auto max-w-2xl p-4 bg-gray-50 rounded-lg">
+              <summary className="cursor-pointer text-gray-600">
+                View Raw Data
+              </summary>
+              <pre className="mt-2 p-4 bg-gray-100 rounded overflow-auto">
+                {JSON.stringify(summary, null, 2)}
+              </pre>
+            </details>
+          </div>
+        </div>
       </div>
-
-      {/* Debug view - collapsible */}
-      <details className="mt-8 p-4 bg-gray-50 rounded-lg">
-        <summary className="cursor-pointer text-gray-600">
-          View Raw Data
-        </summary>
-        <pre className="mt-2 p-4 bg-gray-100 rounded overflow-auto">
-          {JSON.stringify(summary, null, 2)}
-        </pre>
-      </details>
     </div>
   );
 }
