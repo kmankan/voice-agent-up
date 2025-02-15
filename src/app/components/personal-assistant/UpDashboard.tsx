@@ -84,7 +84,7 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
-  const [selectedAccounts, setSelectedAccounts] = useState<Set<'personal' | '2Up'>>(new Set(['personal', '2Up']));
+  const [selectedAccounts, setSelectedAccounts] = useState<Set<'personal' | 'joint'>>(new Set(['personal', 'joint']));
 
   useEffect(() => {
     if (summary) {
@@ -166,11 +166,16 @@ export default function Dashboard() {
 
   useEffect(() => {
     const fetchSummary = async () => {
+      console.log('selectedAccounts', selectedAccounts, Array.from(selectedAccounts));
       console.log('📊 Fetching UP summary...');
       try {
         const response = await fetch('http://localhost:3010/up/get-summary', {
           method: 'POST',
           credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
           body: JSON.stringify({ accountTypes: Array.from(selectedAccounts) })
         });
 
@@ -180,6 +185,7 @@ export default function Dashboard() {
 
         const data = await response.json();
         console.log('✅ Summary received');
+        console.log('Summary data:', data);
         setSummary(data);
       } catch (err) {
         console.error('❌ Error fetching summary:', err);
@@ -207,7 +213,6 @@ export default function Dashboard() {
   };
 
   const filteredTransactions = summary?.data?.filter(transaction => {
-    console.log('Transaction being filtered:', transaction);
     const searchLower = searchTerm.toLowerCase();
     return (
       transaction.attributes.description?.toLowerCase().includes(searchLower) ||
@@ -219,7 +224,7 @@ export default function Dashboard() {
 
   console.log('Filtered transactions length:', filteredTransactions.length);
 
-  const handleAccountToggle = (accountType: 'personal' | '2Up') => {
+  const handleAccountToggle = (accountType: 'personal' | 'joint') => {
     setSelectedAccounts(prev => {
       const newSelection = new Set(prev);
       if (newSelection.has(accountType)) {
@@ -291,7 +296,7 @@ export default function Dashboard() {
 
         <div id="transactions" className="h-[85vh] flex flex-col">
           {/* Search Bar - keep outside of scroll area */}
-          <div className="w-full mx-auto mb-6">
+          <div className="w-full mx-auto mb-3">
             <input
               type="text"
               placeholder="Search transactions..."
@@ -302,7 +307,7 @@ export default function Dashboard() {
           </div>
 
           {/* Account type toggle */}
-          <div className="flex gap-4 items-center">
+          <div className="flex gap-4 items-center font-circular font-bold text-[#ffee52] mb-3">
             <label className="flex items-center space-x-2">
               <input
                 type="checkbox"
@@ -315,8 +320,8 @@ export default function Dashboard() {
             <label className="flex items-center space-x-2">
               <input
                 type="checkbox"
-                checked={selectedAccounts.has('2Up')}
-                onChange={() => handleAccountToggle('2Up')}
+                checked={selectedAccounts.has('joint')}
+                onChange={() => handleAccountToggle('joint')}
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
               <span>2Up</span>
