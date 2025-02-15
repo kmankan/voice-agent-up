@@ -50,7 +50,7 @@ export const encryptApiKey = async (apiKey: string, publicKey: string, sessionId
   const encryptedBase64 = encrypted.toString('base64');
   
   console.log('📡 Sending encrypted key to backend...');
-  const response = await fetch('http://localhost:3010/auth/recieve-key', {
+  const response = await fetch(`${process.env.RAILWAY_PUBLIC_DOMAIN}/auth/recieve-key`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
