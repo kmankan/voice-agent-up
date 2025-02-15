@@ -161,8 +161,8 @@ const VoiceBankingAssistant = () => {
   const handleCallAgent = async () => {
     // This is a placeholder function - implement actual agent connection logic here
     // phone number validation
-    if (!phoneNumber || phoneNumber.trim().length < 10) {
-      alert('Please enter a valid phone number');
+    if (!phoneNumber || !phoneNumber.startsWith('+')) {
+      alert('Please enter a valid phone number with international prefix (e.g. +61...)');
       return;
     }
 
@@ -272,7 +272,7 @@ const VoiceBankingAssistant = () => {
   );
 
   return (
-    <div style={{ backgroundColor: styles.upCoral }} className="flex justify-center items-start min-h-screen p-12">
+    <div style={{ backgroundColor: styles.upCoral }} className="flex justify-center items-start min-h-screen p-24">
       <Card className="w-full max-w-2xl mx-auto bg-[#ffee52] border-2 border-black overflow-hidden p-2">
         <CardHeader style={{ backgroundColor: styles.upYellow }}>
           <div className="flex flex-col items-center space-y-4">
