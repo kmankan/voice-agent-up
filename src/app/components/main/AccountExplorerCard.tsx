@@ -6,7 +6,7 @@ export function AccountExplorerCard() {
 
   const handleClick = async () => {
     // Check for existing session
-    const hasValidSession = await fetch('http://localhost:3010/auth/verify-session', {
+    const hasValidSession = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/verify-session`, {
       credentials: 'include',
     }).then(res => res.ok).catch(() => false);
 
