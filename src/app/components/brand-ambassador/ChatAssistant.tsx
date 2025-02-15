@@ -12,8 +12,6 @@ declare global {
   }
 }
 
-const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3010';
-
 // Style constants to match Up's exact colors
 const styles = {
   upCoral: '#ff705c',
@@ -92,7 +90,7 @@ const VoiceBankingAssistant = () => {
   const handleRecordingComplete = async (audioBlob: Blob) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${SERVER_URL}/chat/transcribe`, {
+      const response = await fetch(`${process.env.RAILWAY_PUBLIC_DOMAIN}/chat/transcribe`, {
         method: 'POST',
         headers: {
           'Content-Type': 'audio/webm',
@@ -137,7 +135,7 @@ const VoiceBankingAssistant = () => {
 
     setIsLoading(true);
     try {
-      const response = await fetch(`${SERVER_URL}/chat/message`, {
+      const response = await fetch(`${process.env.RAILWAY_PUBLIC_DOMAIN}/chat/message`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -167,7 +165,7 @@ const VoiceBankingAssistant = () => {
     }
 
     console.log('Calling agent...');
-    const response = await fetch(`${SERVER_URL}/bland/call`, {
+    const response = await fetch(`${process.env.RAILWAY_PUBLIC_DOMAIN}/bland/call`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
