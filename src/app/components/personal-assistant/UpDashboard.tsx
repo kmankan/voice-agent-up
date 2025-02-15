@@ -58,12 +58,16 @@ interface Transaction {
 }
 
 interface TransactionResponse {
-  summary: Transaction[];
+  data: Transaction[];
 }
 
 interface InsightRequest {
-  question: string;
+  messages: Message[];
   summary: TransactionResponse;
+}
+
+interface InsightResponse {
+  answer: string;
 }
 
 type Message = {
@@ -80,6 +84,7 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
+  const [selectedAccounts, setSelectedAccounts] = useState<Set<'personal' | '2Up'>>(new Set(['personal', '2Up']));
 
   useEffect(() => {
     if (summary) {
@@ -89,7 +94,7 @@ export default function Dashboard() {
 
   // strips out any sensitive or identifiable data from the transaction data found in variable summary
   const anonymiseData = (transactionInformation: TransactionResponse): TransactionResponse => {
-    const anonymisedData = transactionInformation.summary.map(transaction => ({
+    const anonymisedData = transactionInformation.data?.map(transaction => ({
       ...transaction,
       id: `XXXX-${transaction.id.slice(-4)}`,
       attributes: {
@@ -118,15 +123,21 @@ export default function Dashboard() {
         }
       }
     }));
-    return { summary: anonymisedData };
+    return { data: anonymisedData };
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (inputMessage.trim()) {
-      setMessages([...messages, { role: 'user', content: inputMessage }]);
-      setInputMessage('');
-    }
+    const message = inputMessage.trim();
+    // is message is empty, do nothing
+    if (!message) return;
+    // clear the input message field
+    setInputMessage('');
+
+    // Create temporary variable to store messages and update the globalmessages state with new user message
+    const newMessages = [...messages, { role: 'user' as const, content: message }];
+    setMessages(newMessages);
+
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/up/insights`, {
         method: 'POST',
@@ -135,7 +146,7 @@ export default function Dashboard() {
           'Accept': 'application/json',
         },
         body: JSON.stringify({
-          question: inputMessage,
+          messages: newMessages,
           anonymisedSummary
         })
       });
@@ -144,7 +155,7 @@ export default function Dashboard() {
         throw new Error('Failed to fetch insights');
       }
 
-      const data = await response.json();
+      const data: InsightResponse = await response.json();
       console.log('✅ Insights received');
       setMessages([...messages, { role: 'assistant', content: data.answer }]);
     } catch (error) {
@@ -158,8 +169,9 @@ export default function Dashboard() {
       console.log('📊 Fetching UP summary...');
       try {
         const response = await fetch('http://localhost:3010/up/get-summary', {
-          method: 'GET',
-          credentials: 'include'
+          method: 'POST',
+          credentials: 'include',
+          body: JSON.stringify({ accountTypes: Array.from(selectedAccounts) })
         });
 
         if (!response.ok) {
@@ -178,7 +190,7 @@ export default function Dashboard() {
     };
 
     fetchSummary();
-  }, []);
+  }, [selectedAccounts]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-AU', {
@@ -194,7 +206,8 @@ export default function Dashboard() {
     setExpandedId(expandedId === id ? null : id);
   };
 
-  const filteredTransactions = summary?.data.filter(transaction => {
+  const filteredTransactions = summary?.data?.filter(transaction => {
+    console.log('Transaction being filtered:', transaction);
     const searchLower = searchTerm.toLowerCase();
     return (
       transaction.attributes.description?.toLowerCase().includes(searchLower) ||
@@ -202,7 +215,24 @@ export default function Dashboard() {
       transaction.relationships.category?.data?.id.toLowerCase().includes(searchLower) ||
       transaction.relationships.parentCategory?.data?.id.toLowerCase().includes(searchLower)
     );
-  });
+  }) ?? [];
+
+  console.log('Filtered transactions length:', filteredTransactions.length);
+
+  const handleAccountToggle = (accountType: 'personal' | '2Up') => {
+    setSelectedAccounts(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(accountType)) {
+        // Don't allow deselecting if it's the last selected option
+        if (newSelection.size > 1) {
+          newSelection.delete(accountType);
+        }
+      } else {
+        newSelection.add(accountType);
+      }
+      return newSelection;
+    });
+  };
 
   if (isLoading) return (
     <div className="flex justify-center items-center min-h-screen">
@@ -269,6 +299,28 @@ export default function Dashboard() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
+          </div>
+
+          {/* Account type toggle */}
+          <div className="flex gap-4 items-center">
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={selectedAccounts.has('personal')}
+                onChange={() => handleAccountToggle('personal')}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span>Personal</span>
+            </label>
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={selectedAccounts.has('2Up')}
+                onChange={() => handleAccountToggle('2Up')}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span>2Up</span>
+            </label>
           </div>
 
           {/* Scrollable transaction list */}
@@ -400,7 +452,7 @@ export default function Dashboard() {
                                   key={index}
                                   className="inline-block px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700"
                                 >
-                                  #{tag.id}
+                                  #{tag}
                                 </span>
                               ))}
                             </div>
