@@ -22,7 +22,11 @@ export default function ConnectAPI() {
     // Initialize session when component mounts
     const initSession = async () => {
       const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/init-session`, {
-        method: 'POST'
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
       const data: CreateSessionResponse = await response.json();
       if (data.publicKey && data.sessionId) {
