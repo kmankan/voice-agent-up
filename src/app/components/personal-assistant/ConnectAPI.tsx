@@ -6,13 +6,6 @@ import { Button } from '@/components/ui/button';
 import { encryptApiKey } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
-const styles = {
-  upCoral: '#ff705c',
-  upYellow: '#ffee52',
-  upTeal: '#489b98',
-  upDarkTeal: '#305555'
-};
-
 export type CreateSessionResponse = {
   sessionId: string;
   publicKey: string;
@@ -20,7 +13,6 @@ export type CreateSessionResponse = {
 
 export default function ConnectAPI() {
   const apiKeyRef = useRef<HTMLInputElement>(null);
-  //const [encryptedApiKey, setEncryptedApiKey] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
