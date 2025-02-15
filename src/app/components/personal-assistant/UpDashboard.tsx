@@ -62,11 +62,6 @@ interface TransactionResponse {
   data: Transaction[];
 }
 
-interface InsightRequest {
-  messages: Message[];
-  summary: TransactionResponse;
-}
-
 interface InsightResponse {
   answer: string;
 }

@@ -4,13 +4,13 @@ import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 
-const styles = {
-  upCoral: '#ff705c',
-  upYellow: '#ffee52',
-  upTeal: '#489b98',
-  upDarkTeal: '#305555',
-  upPink: '#ff8bd1'
-};
+// const styles = {
+//   upCoral: '#ff705c',
+//   upYellow: '#ffee52',
+//   upTeal: '#489b98',
+//   upDarkTeal: '#305555',
+//   upPink: '#ff8bd1'
+// };
 
 export default function Home() {
   return (
