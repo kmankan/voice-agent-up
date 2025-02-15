@@ -167,7 +167,7 @@ export default function Dashboard() {
       console.log('selectedAccounts', selectedAccounts, Array.from(selectedAccounts));
       console.log('📊 Fetching UP summary...');
       try {
-        const response = await fetch(`${process.env.RAILWAY_PUBLIC_DOMAIN}/up/get-summary`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/up/get-summary`, {
           method: 'POST',
           credentials: 'include',
           headers: {
@@ -238,7 +238,7 @@ export default function Dashboard() {
   const handleExit = async () => {
     try {
       // Clear the session cookie on the server
-      await fetch(`${process.env.RAILWAY_PUBLIC_DOMAIN}/auth/logout`, {
+      await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/logout`, {
         method: 'POST',
         credentials: 'include',
       });

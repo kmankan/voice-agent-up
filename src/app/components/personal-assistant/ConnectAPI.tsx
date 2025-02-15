@@ -21,7 +21,7 @@ export default function ConnectAPI() {
   useEffect(() => {
     // Initialize session when component mounts
     const initSession = async () => {
-      const response = await fetch(`${process.env.RAILWAY_PUBLIC_DOMAIN}/auth/init-session`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/init-session`, {
         method: 'POST'
       });
       const data: CreateSessionResponse = await response.json();
@@ -50,7 +50,7 @@ export default function ConnectAPI() {
 
       if (response.success) {
         console.log('🔍 Verifying session...');
-        const verifySession = await fetch(`${process.env.RAILWAY_PUBLIC_DOMAIN}/auth/verify-session`, {
+        const verifySession = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/verify-session`, {
           credentials: 'include' // Important: includes cookies in the request
         });
 

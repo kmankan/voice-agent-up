@@ -90,7 +90,7 @@ const VoiceBankingAssistant = () => {
   const handleRecordingComplete = async (audioBlob: Blob) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${process.env.RAILWAY_PUBLIC_DOMAIN}/chat/transcribe`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/chat/transcribe`, {
         method: 'POST',
         headers: {
           'Content-Type': 'audio/webm',
@@ -135,7 +135,7 @@ const VoiceBankingAssistant = () => {
 
     setIsLoading(true);
     try {
-      const response = await fetch(`${process.env.RAILWAY_PUBLIC_DOMAIN}/chat/message`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/chat/message`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -165,7 +165,7 @@ const VoiceBankingAssistant = () => {
     }
 
     console.log('Calling agent...');
-    const response = await fetch(`${process.env.RAILWAY_PUBLIC_DOMAIN}/bland/call`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/bland/call`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
