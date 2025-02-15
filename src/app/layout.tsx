@@ -4,6 +4,7 @@ import "./globals.css";
 import localFont from 'next/font/local'
 import { ZapSpinner } from '@/components/ui/ZapSpinner';
 import Link from 'next/link';
+import { ConsoleLogger } from './components/ConsoleLogger';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -73,6 +74,7 @@ export default function RootLayout({
           </Link>
         </div>
         {children}
+        <ConsoleLogger />
       </body>
     </html>
   );
