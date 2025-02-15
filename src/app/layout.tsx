@@ -4,7 +4,7 @@ import "./globals.css";
 import localFont from 'next/font/local'
 import { ZapSpinner } from '@/components/ui/ZapSpinner';
 import Link from 'next/link';
-import { ConsoleLogger } from './components/ConsoleLogger';
+import { ConsoleLogger } from '@/app/components/main/ConsoleLogger';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
