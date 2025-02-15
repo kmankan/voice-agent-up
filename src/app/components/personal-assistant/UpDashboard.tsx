@@ -58,15 +58,100 @@ interface Transaction {
 }
 
 interface TransactionResponse {
-  data: Transaction[];
+  summary: Transaction[];
 }
+
+interface InsightRequest {
+  question: string;
+  summary: TransactionResponse;
+}
+
+type Message = {
+  role: 'user' | 'assistant';
+  content: string;
+};
 
 export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<TransactionResponse | null>(null);
+  const [anonymisedSummary, setAnonymisedSummary] = useState<TransactionResponse | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputMessage, setInputMessage] = useState('');
+
+  useEffect(() => {
+    if (summary) {
+      setAnonymisedSummary(anonymiseData(summary));
+    }
+  }, [summary]);
+
+  // strips out any sensitive or identifiable data from the transaction data found in variable summary
+  const anonymiseData = (transactionInformation: TransactionResponse): TransactionResponse => {
+    const anonymisedData = transactionInformation.summary.map(transaction => ({
+      ...transaction,
+      id: `XXXX-${transaction.id.slice(-4)}`,
+      attributes: {
+        ...transaction.attributes,
+        description: transaction.attributes.description?.replace(/[A-Za-z0-9]{16,}|(?:\+?\d{2}[-\s]?)?\d{10}|\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, '[REDACTED]') ?? null,
+        rawText: transaction.attributes.rawText?.replace(/[A-Za-z0-9]{16,}|(?:\+?\d{2}[-\s]?)?\d{10}|\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, '[REDACTED]') ?? null,
+        message: transaction.attributes.message?.replace(/[A-Za-z0-9]{16,}|(?:\+?\d{2}[-\s]?)?\d{10}|\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, '[REDACTED]') ?? null,
+        cardPurchaseMethod: transaction.attributes.cardPurchaseMethod ? {
+          method: transaction.attributes.cardPurchaseMethod.method,
+          cardNumberSuffix: 'XXXX'
+        } : null,
+        performingCustomer: transaction.attributes.performingCustomer ? {
+          displayName: 'Anonymous User'
+        } : null,
+        deepLinkURL: undefined
+      },
+      relationships: {
+        ...transaction.relationships,
+        account: transaction.relationships.account ? {
+          data: {
+            type: transaction.relationships.account.data?.type ?? 'account',
+            id: 'XXXX'
+          }
+        } : {
+          data: null
+        }
+      }
+    }));
+    return { summary: anonymisedData };
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inputMessage.trim()) {
+      setMessages([...messages, { role: 'user', content: inputMessage }]);
+      setInputMessage('');
+    }
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/up/insights`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          question: inputMessage,
+          anonymisedSummary
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch insights');
+      }
+
+      const data = await response.json();
+      console.log('✅ Insights received');
+      setMessages([...messages, { role: 'assistant', content: data.answer }]);
+    } catch (error) {
+      console.error('❌ Error fetching insights:', error);
+      setError('Failed to fetch insights');
+    }
+  };
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -136,11 +221,44 @@ export default function Dashboard() {
       <h1 className="text-5xl text-center font-circular font-bold mb-8 text-[#ffee52]">Recent Transactions</h1>
 
       <div className="grid grid-cols-2 gap-4">
-        <div id="insights" className="h-[85vh] border-2 border-white rounded-lg p-4">
+        <div id="insights" className="h-[85vh] border-2 border-white rounded-lg p-4 flex flex-col">
           <h2 className="text-2xl font-circular font-bold mb-6 text-[#ffee52]">
             Insights
           </h2>
+
+          {/* Messages area */}
+          <div className="flex-1 overflow-y-auto mb-4 space-y-4">
+            {messages.map((message, index) => (
+              <div
+                key={index}
+                className={`p-3 rounded-lg max-w-[80%] ${message.role === 'user'
+                  ? 'ml-auto bg-[#489b98] text-white'
+                  : 'bg-gray-200 text-black'
+                  }`}
+              >
+                {message.content}
+              </div>
+            ))}
+          </div>
+
+          {/* Input form */}
+          <form onSubmit={handleSubmit} className="flex gap-2">
+            <input
+              type="text"
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              placeholder="Ask about your transactions..."
+              className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ffee52] focus:border-transparent"
+            />
+            <button
+              type="submit"
+              className="px-4 py-2 bg-[#ffee52] text-[#ff705c] rounded-lg hover:bg-[#3a7c7a] transition-colors"
+            >
+              Send
+            </button>
+          </form>
         </div>
+
         <div id="transactions" className="h-[85vh] flex flex-col">
           {/* Search Bar - keep outside of scroll area */}
           <div className="w-full mx-auto mb-6">
@@ -154,7 +272,7 @@ export default function Dashboard() {
           </div>
 
           {/* Scrollable transaction list */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto font-circular">
             <div className="flex flex-col items-center gap-4 w-full max-w-2xl mx-auto pb-4">
               {filteredTransactions?.map((transaction) => (
                 <Card
@@ -176,7 +294,7 @@ export default function Dashboard() {
                         </p>
                       </div>
                       <div className={`text-lg font-medium ${transaction.attributes.amount.value.startsWith('-')
-                        ? 'text-red-900'
+                        ? 'text-rose-600'
                         : 'text-green-200'
                         }`}>
                         {transaction.attributes.amount.value.startsWith('-') ? '' : '+'}
