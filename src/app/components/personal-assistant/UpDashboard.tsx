@@ -139,6 +139,7 @@ export default function Dashboard() {
     // Create temporary variable to store messages and update the globalmessages state with new user message
     const newMessages = [...messages, { role: 'user' as const, content: message }];
     setMessages(newMessages);
+    console.log('current messages', newMessages);
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/up/insights`, {
@@ -158,7 +159,7 @@ export default function Dashboard() {
       }
 
       const data: InsightResponse = await response.json();
-      console.log('✅ Insights received');
+      console.log('✅ Insights received', data);
       setMessages([...messages, { role: 'assistant', content: data.answer }]);
     } catch (error) {
       console.error('❌ Error fetching insights:', error);
@@ -223,8 +224,6 @@ export default function Dashboard() {
       transaction.relationships.parentCategory?.data?.id.toLowerCase().includes(searchLower)
     );
   }) ?? [];
-
-  console.log('Filtered transactions length:', filteredTransactions.length);
 
   const handleAccountToggle = (accountType: 'personal' | 'joint') => {
     setSelectedAccounts(prev => {
