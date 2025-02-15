@@ -5,10 +5,18 @@ export function AccountExplorerCard() {
   const router = useRouter();
 
   const handleClick = async () => {
-    // Check for existing session
-    const hasValidSession = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/verify-session`, {
-      credentials: 'include',
-    }).then(res => res.ok).catch(() => false);
+    let hasValidSession = false;
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/verify-session`, {
+        credentials: 'include',
+      });
+      hasValidSession = response.ok;
+      if (!response.ok) {
+        console.error('Session verification failed:', response.status, response.statusText);
+      }
+    } catch (error) {
+      console.error('Session verification error:', error);
+    }
 
     // Redirect to dashboard if session exists, otherwise go to account page
     router.push(hasValidSession ? '/dashboard' : '/account');
