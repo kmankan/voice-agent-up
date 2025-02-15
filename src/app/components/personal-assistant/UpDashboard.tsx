@@ -7,6 +7,7 @@ import {
   CardContent,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { useRouter } from 'next/navigation';
 
 interface Category {
   type: string;
@@ -76,6 +77,7 @@ type Message = {
 };
 
 export default function Dashboard() {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<TransactionResponse | null>(null);
@@ -239,6 +241,21 @@ export default function Dashboard() {
     });
   };
 
+  const handleExit = async () => {
+    try {
+      // Clear the session cookie on the server
+      await fetch('http://localhost:3010/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      // Redirect to home page
+      router.push('/');
+    } catch (error) {
+      console.error('Failed to logout:', error);
+    }
+  };
+
   if (isLoading) return (
     <div className="flex justify-center items-center min-h-screen">
       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -253,6 +270,15 @@ export default function Dashboard() {
 
   return (
     <div className="container mx-auto p-4">
+      <div className="absolute top-4 right-4">
+        <button
+          onClick={handleExit}
+          className="px-4 py-2 bg-[#ffee52] text-[#ff705c] rounded-lg hover:bg-red-600 hover:text-white transition-colors "
+        >
+          Exit
+        </button>
+      </div>
+
       <h1 className="text-5xl text-center font-circular font-bold mb-8 text-[#ffee52]">Recent Transactions</h1>
 
       <div className="grid grid-cols-2 gap-4">
@@ -287,7 +313,7 @@ export default function Dashboard() {
             />
             <button
               type="submit"
-              className="px-4 py-2 bg-[#ffee52] text-[#ff705c] rounded-lg hover:bg-[#3a7c7a] transition-colors"
+              className="px-4 py-2 bg-[#ffee52] text-[#ff705c] rounded-lg hover:bg-[#3a7c7a] transition-colors active:transform active:scale-95 active:bg-[#ffdd00]"
             >
               Send
             </button>
