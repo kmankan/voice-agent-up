@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Mic, MicOff, MessageSquare, Phone } from 'lucide-react';
+import { Mic, MicOff, MessageSquare, Phone, SendHorizontal, Headset } from 'lucide-react';
 
 // Declare the custom element type for TypeScript
 declare global {
@@ -197,7 +197,7 @@ const VoiceBankingAssistant = () => {
         <form onSubmit={handleSubmit} className="flex gap-2 items-center">
           <Button
             onClick={handleListen}
-            className={`w-12 h-12 rounded-full transition-all duration-200 ${isListening ? 'bg-red-500 hover:bg-red-600' : 'bg-[#ff705c] hover:bg-[#e65a47]'
+            className={`hidden md:block w-12 h-12 rounded-full transition-all duration-200 ${isListening ? 'bg-red-500 hover:bg-red-600' : 'bg-[#ff705c] hover:bg-[#e65a47]'
               }`}
             style={{
               boxShadow: isListening ? '0 0 0 4px rgba(255, 112, 92, 0.3)' : 'none',
@@ -227,13 +227,13 @@ const VoiceBankingAssistant = () => {
           <Button
             type="submit"
             disabled={isLoading}
-            className="flex px-6 py-2 rounded-full transition-colors duration-200"
+            className="flex h-14 px-2 py-2 rounded-lg transition-colors duration-200"
             style={{
               backgroundColor: styles.upCoral,
               color: 'white'
             }}
           >
-            {isLoading ? 'Thinking...' : 'Ask'}
+            {isLoading ? 'Thinking...' : <SendHorizontal className="w-5 h-5" />}
           </Button>
         </form>
       );
@@ -246,7 +246,7 @@ const VoiceBankingAssistant = () => {
   const renderChatHistory = () => (
     <div
       ref={chatContainerRef}
-      className="space-y-4 mb-4 p-1 max-h-[500px] overflow-y-auto rounded-lg"
+      className="space-y-4 mb-4 p-1 max-h-[50vh] overflow-y-auto rounded-lg"
     >
       {messages.map((message, index) => (
         <div
@@ -270,8 +270,8 @@ const VoiceBankingAssistant = () => {
   );
 
   return (
-    <div style={{ backgroundColor: styles.upCoral }} className="flex justify-center items-start min-h-screen p-24">
-      <Card className="w-full max-w-2xl mx-auto bg-[#ffee52] border-2 border-black overflow-hidden p-2">
+    <div style={{ backgroundColor: styles.upCoral }} className="flex justify-center items-start h-screen py-24 md:py-24 px-2 md:px-24 font-circular">
+      <Card className="w-full max-w-2xl mx-auto bg-[#ffee52] border-2 border-black overflow-hidden p-2 max-h-[90vh]">
         <CardHeader style={{ backgroundColor: styles.upYellow }}>
           <div className="flex flex-col items-center space-y-4">
             <CardTitle className="flex justify-center items-center w-full">
@@ -280,10 +280,10 @@ const VoiceBankingAssistant = () => {
               </span>
             </CardTitle>
 
-            <div className="flex bg-neutral-100 rounded-full p-1 shadow-sm">
+            <div className="flex bg-neutral-100 rounded-full p-1">
               <Button
                 variant="ghost"
-                className={`rounded-full px-6 transition-colors 
+                className={`rounded-full px-6 transition-colors font-bold 
                   ${chatMode === 'text'
                     ? 'bg-[#ff705c] text-white hover:bg-[#ff705c]/90 hover:text-white'
                     : 'text-[#ff705c] hover:bg-[#ff705c]/10 hover:text-[#ff705c]'
@@ -295,14 +295,14 @@ const VoiceBankingAssistant = () => {
               </Button>
               <Button
                 variant="ghost"
-                className={`rounded-full px-6 transition-colors 
+                className={`rounded-full px-6 transition-colors font-bold 
                   ${chatMode === 'agent'
                     ? 'bg-[#ff705c] text-white hover:bg-[#ff705c]/90 hover:text-white'
                     : 'text-[#ff705c] hover:bg-[#ff705c]/10 hover:text-[#ff705c]'
                   }`}
                 onClick={() => handleModeChange('agent')}
               >
-                <MessageSquare className="w-4 h-4 mr-2" />
+                <Headset className="w-4 h-4 mr-2" />
                 Talk to an Agent
               </Button>
             </div>
