@@ -82,7 +82,7 @@ export default function ConnectAPI() {
   };
 
   return (
-    <div>
+    <div className="font-circular">
       <Card className="w-full max-w-2xl mx-auto bg-[#ff705c] rounded-lg">
         <CardHeader className="bg-[#ff705c] border-b-2 border-white rounded-lg">
           <CardTitle className="flex justify-between items-center">

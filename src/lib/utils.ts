@@ -70,10 +70,6 @@ export const encryptApiKey = async (apiKey: string, publicKey: string, sessionId
   const data = await response.json();
   console.log('✨ Backend response received:', response.ok ? 'success' : 'failed');
   
-  // Add cookie check
-  const cookies = document.cookie;
-  console.log('🍪 Cookies after response:', cookies);
-  
   return {
     success: response.ok && data.success,
     encryptedApiKey: encryptedBase64,
