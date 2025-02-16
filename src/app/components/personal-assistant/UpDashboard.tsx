@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useRouter } from 'next/navigation';
+import { SendHorizontal } from 'lucide-react';
 
 interface Category {
   type: string;
@@ -154,8 +155,8 @@ export default function Dashboard() {
       }
 
       const data: InsightResponse = await response.json();
-      console.log('✅ Insights received', data);
-      setMessages([...messages, { role: 'assistant', content: data.answer }]);
+      console.log('✅ Insights received', data);// Update to include all previous messages plus the new assistant response
+      setMessages([...newMessages, { role: 'assistant', content: data.answer }]);
     } catch (error) {
       console.error('❌ Error fetching insights:', error);
       setError('Failed to fetch insights');
@@ -263,7 +264,7 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="px-3">
       <div className="absolute top-4 right-4">
         <button
           onClick={handleExit}
@@ -273,10 +274,10 @@ export default function Dashboard() {
         </button>
       </div>
 
-      <h1 className="text-5xl text-center font-circular font-bold mb-8 text-[#ffee52]">Recent Transactions</h1>
+      <h1 className="text-5xl text-center font-circular font-bold pt-4 md:pt-3 mb-4 md:mb-8 text-[#ffee52]">Recent Transactions</h1>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div id="insights" className="h-[85vh] border-2 border-white rounded-lg p-4 flex flex-col">
+      <div className="grid grid-cols-[60%_40%] md:grid-cols-2 gap-2 md:gap-2">
+        <div id="insights" className="h-[83vh] md:h-[85vh] border-2 border-white rounded-lg py-2 px-1 md:px-2 flex flex-col">
           <h2 className="text-2xl font-circular font-bold mb-6 text-[#ffee52]">
             Insights
           </h2>
@@ -286,7 +287,7 @@ export default function Dashboard() {
             {messages.map((message, index) => (
               <div
                 key={index}
-                className={`p-3 rounded-lg max-w-[80%] ${message.role === 'user'
+                className={`p-3 rounded-lg max-w-[80%] ${message.role === 'assistant'
                   ? 'ml-auto bg-[#489b98] text-white'
                   : 'bg-gray-200 text-black'
                   }`}
@@ -297,37 +298,37 @@ export default function Dashboard() {
           </div>
 
           {/* Input form */}
-          <form onSubmit={handleSubmit} className="flex gap-2">
+          <form onSubmit={handleSubmit} className="flex gap-1">
             <input
               type="text"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="Ask about your transactions..."
-              className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ffee52] focus:border-transparent"
+              placeholder="Ask about transactions..."
+              className="flex-1 px-1 py-1 text-xs md:text-base rounded-lg bg-neutral-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ffee52] focus:border-transparent resize-none"
             />
             <button
               type="submit"
-              className="px-4 py-2 bg-[#ffee52] text-[#ff705c] rounded-lg hover:bg-[#3a7c7a] transition-colors active:transform active:scale-95 active:bg-[#ffdd00]"
+              className="px-3 md:px-4 ml-1 py-2 bg-[#ffee52] text-[#ff705c] rounded-lg hover:bg-[#3a7c7a] transition-colors active:transform active:scale-95 active:bg-[#ffdd00]"
             >
-              Send
+              <SendHorizontal className="w-4 h-4" />
             </button>
           </form>
         </div>
 
         <div id="transactions" className="h-[85vh] flex flex-col">
           {/* Search Bar - keep outside of scroll area */}
-          <div className="w-full mx-auto mb-3">
+          <div className="w-11/12 mx-auto mb-3">
             <input
               type="text"
               placeholder="Search transactions..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full text-xs md:text-base px-2 md:px-4 py-2 bg-neutral-100 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           {/* Account type toggle */}
-          <div className="flex gap-4 items-center font-circular font-bold text-[#ffee52] mb-3">
+          <div className="flex gap-2 md:gap-4 items-center justify-center font-circular font-bold text-[#ffee52] mb-3">
             <label className="flex items-center space-x-2">
               <input
                 type="checkbox"
@@ -350,47 +351,47 @@ export default function Dashboard() {
 
           {/* Scrollable transaction list */}
           <div className="flex-1 overflow-y-auto font-circular">
-            <div className="flex flex-col items-center gap-4 w-full max-w-2xl mx-auto pb-4">
+            <div className="flex flex-col items-center gap-4">
               {filteredTransactions?.map((transaction) => (
                 <Card
                   key={transaction.id}
                   onClick={() => toggleExpand(transaction.id)}
-                  className={`w-full cursor-pointer hover:shadow-lg transition-shadow ${transaction.attributes.amount.value.startsWith('-')
+                  className={`w-11/12 cursor-pointer hover:shadow-lg transition-shadow ${transaction.attributes.amount.value.startsWith('-')
                     ? 'bg-[#ff8bd1]'
                     : 'bg-[#489b98]'
                     }`}
                 >
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1">
-                        <h3 className="font-semibold text-lg leading-none text-[#ffee52]">
+                  <CardHeader className="p-3 md:p-4">
+                    <div className="flex flex-col md:flex-row justify-between items-start">
+                      <div className="flex flex-col space-y-1 w-full">
+                        <h3 className="font-semibold text-base md:text-lg leading-none text-[#ffee52]">
                           {transaction.attributes.description || 'Unnamed Transaction'}
                         </h3>
-                        <p className="text-sm text-muted-foreground text-black">
-                          {transaction.attributes.rawText || 'No details available'}
+                        <p className="text-sm text-muted-foreground text-black w-full overflow-scroll">
+                          {transaction.attributes.rawText || ''}
                         </p>
                       </div>
-                      <div className={`text-lg font-medium ${transaction.attributes.amount.value.startsWith('-')
+                      <div className={`flex text-right leading-none text-sm md:text-base font-medium ${transaction.attributes.amount.value.startsWith('-')
                         ? 'text-rose-600'
                         : 'text-green-200'
                         }`}>
                         {transaction.attributes.amount.value.startsWith('-') ? '' : '+'}
-                        {transaction.attributes.amount.value} {transaction.attributes.amount.currencyCode}
+                        ${transaction.attributes.amount.value}
                       </div>
                     </div>
                   </CardHeader>
 
-                  <CardContent>
+                  <CardContent className='p-3 md:p-4'>
                     <div className="space-y-2">
                       {/* Categories */}
                       <div className="flex gap-2">
                         {transaction.relationships.parentCategory?.data && (
-                          <Badge variant="secondary">
+                          <Badge variant="secondary" className="p-0 text-[10px] md:text-sm">
                             {transaction.relationships.parentCategory.data.id}
                           </Badge>
                         )}
                         {transaction.relationships.category?.data && (
-                          <Badge variant="outline" className="bg-[#71f38b] text-black">
+                          <Badge variant="outline" className="bg-[#71f38b] text-black p-0 text-[10px] md:text-sm">
                             {transaction.relationships.category.data.id}
                           </Badge>
                         )}
@@ -409,7 +410,7 @@ export default function Dashboard() {
                       <div className="mt-4 pt-4 border-t border-gray-100">
                         <div className="space-y-3 text-sm">
                           {/* Transaction ID */}
-                          <div className="text-gray-500 font-mono text-xs">
+                          <div className="text-gray-900 font-mono text-xs">
                             ID: {transaction.id}
                           </div>
 
