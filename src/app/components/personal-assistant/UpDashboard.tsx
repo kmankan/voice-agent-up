@@ -124,7 +124,7 @@ function InsightsPanel({
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
 }) {
   return (
-    <div id="insights" className="h-[72vh] md:h-[85vh] border-2 border-white rounded-lg py-2 px-1 md:px-2 flex flex-col">
+    <div id="insights" className="h-[73vh] md:h-[85vh] border-2 border-white rounded-lg py-2 px-1 md:px-2 flex flex-col">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-circular font-bold text-[#ffee52]">
           Insights
