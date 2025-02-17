@@ -1,25 +1,33 @@
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
+import { authHeaders, getAuthToken } from '@/lib/auth';
 
 export function AccountExplorerCard() {
   const router = useRouter();
 
   const handleClick = async () => {
-    let hasValidSession = false;
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/verify-session`, {
-        credentials: 'include',
-      });
-      hasValidSession = response.ok;
-      if (!response.ok) {
-        console.error('Session verification failed:', response.status, response.statusText);
-      }
-    } catch (error) {
-      console.error('Session verification error:', error);
+    const token = getAuthToken();
+    if (!token) {
+      router.push('/account');
+      return;
     }
 
-    // Redirect to dashboard if session exists, otherwise go to account page
-    router.push(hasValidSession ? '/dashboard' : '/account');
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/verify-session`, {
+        headers: authHeaders(),
+      });
+
+      if (!response.ok) {
+        console.error('Session verification failed:', response.status);
+        router.push('/account');
+        return;
+      }
+
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Session verification error:', error);
+      router.push('/account');
+    }
   };
 
   return (
