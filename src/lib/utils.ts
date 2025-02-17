@@ -62,6 +62,10 @@ export const encryptApiKey = async (apiKey: string, publicKey: string, sessionId
     }),
   });
 
+  // Add this to inspect cookies (but note httpOnly cookies won't be visible)
+  console.log('🍪 Cookie header received:', response.headers.get('set-cookie'));
+  console.log('🍪 All cookies:', document.cookie);
+
   if (!response.ok) {
     console.log('✨ Backend response received: failed');
     return { success: false };
