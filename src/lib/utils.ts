@@ -2,6 +2,7 @@ import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 //import { encrypt } from "./encrypt";
 import crypto from 'crypto';
+import { setAuthToken } from "./auth";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -56,17 +57,11 @@ export const encryptApiKey = async (apiKey: string, publicKey: string, sessionId
       'Accept': 'application/json',
       'Content-Type': 'application/json'
     },
-    credentials: 'include',
     body: JSON.stringify({
       sessionId,
       encryptedApiKey: encryptedBase64,
     }),
   });
-
-  // Add this to debug cookie handling
-  const setCookie = response.headers.get('set-cookie');
-  console.log('🍪 Set-Cookie header:', setCookie);
-  console.log('🍪 Response headers:', Object.fromEntries(response.headers.entries()));
 
   if (!response.ok) {
     console.log('✨ Backend response received: failed');
@@ -74,7 +69,9 @@ export const encryptApiKey = async (apiKey: string, publicKey: string, sessionId
   }
 
   const data = await response.json();
-  console.log('✨ Backend response received:', response.ok ? 'success' : 'failed');
+  if (data.token) {
+    setAuthToken(data.token);
+  }
   
   return {
     success: response.ok && data.success,

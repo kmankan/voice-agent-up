@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { encryptApiKey } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { authHeaders } from '@/lib/auth';
 
 export type CreateSessionResponse = {
   sessionId: string;
@@ -23,7 +24,6 @@ export default function ConnectAPI() {
     const initSession = async () => {
       const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/init-session`, {
         method: 'POST',
-        credentials: 'include',
         headers: {
           'Content-Type': 'application/json'
         }
@@ -50,17 +50,12 @@ export default function ConnectAPI() {
       const apiKeyValue = apiKeyRef.current?.value.trim() || '';
       // Encrypt and validate
       const response = await encryptApiKey(apiKeyValue, publicKey!, sessionId!);
-      //setEncryptedApiKey(response.encryptedApiKey);
 
       if (response.success) {
         console.log('🔍 Verifying session...');
         const verifySession = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/verify-session`, {
           method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
+          headers: authHeaders()
         });
 
         if (verifySession.ok) {
