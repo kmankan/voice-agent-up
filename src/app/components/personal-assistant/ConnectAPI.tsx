@@ -55,7 +55,12 @@ export default function ConnectAPI() {
       if (response.success) {
         console.log('🔍 Verifying session...');
         const verifySession = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/verify-session`, {
-          credentials: 'include' // Important: includes cookies in the request
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
         });
 
         if (verifySession.ok) {

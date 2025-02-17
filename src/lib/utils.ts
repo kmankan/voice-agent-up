@@ -53,7 +53,8 @@ export const encryptApiKey = async (apiKey: string, publicKey: string, sessionId
   const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/recieve-key`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
     },
     credentials: 'include',
     body: JSON.stringify({
@@ -62,9 +63,10 @@ export const encryptApiKey = async (apiKey: string, publicKey: string, sessionId
     }),
   });
 
-  // Add this to inspect cookies (but note httpOnly cookies won't be visible)
-  console.log('🍪 Cookie header received:', response.headers.get('set-cookie'));
-  console.log('🍪 All cookies:', document.cookie);
+  // Add this to debug cookie handling
+  const setCookie = response.headers.get('set-cookie');
+  console.log('🍪 Set-Cookie header:', setCookie);
+  console.log('🍪 Response headers:', Object.fromEntries(response.headers.entries()));
 
   if (!response.ok) {
     console.log('✨ Backend response received: failed');
