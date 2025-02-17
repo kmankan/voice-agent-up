@@ -518,12 +518,14 @@ export default function Dashboard() {
       } catch (err) {
         console.error('❌ Error fetching summary:', err);
         setError('Failed to load summary');
+        router.replace('/account');
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchSummary();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAccounts]);
 
   const formatDate = (dateString: string) => {
