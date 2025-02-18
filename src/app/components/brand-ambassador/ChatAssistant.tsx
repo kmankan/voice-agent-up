@@ -276,7 +276,7 @@ const VoiceBankingAssistant = () => {
           <div className="flex flex-col items-center space-y-4">
             <CardTitle className="flex justify-center items-center w-full">
               <span style={{ color: styles.upCoral }} className="text-2xl font-bold">
-                Up Voice Assistant
+                Up Assistant
               </span>
             </CardTitle>
 
