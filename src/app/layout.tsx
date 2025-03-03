@@ -5,6 +5,7 @@ import localFont from 'next/font/local'
 import { ZapSpinner } from '@/components/ui/ZapSpinner';
 import Link from 'next/link';
 import { ConsoleLogger } from '@/app/components/main/ConsoleLogger';
+import { PostHogProvider } from '@/app/providers';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -68,13 +69,15 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${circular.variable} ${apercuMono.variable} antialiased`}
       >
-        <div className="fixed top-4 left-4">
-          <Link href="/">
-            <ZapSpinner />
-          </Link>
-        </div>
-        {children}
-        <ConsoleLogger />
+        <PostHogProvider>
+          <div className="fixed top-4 left-4">
+            <Link href="/">
+              <ZapSpinner />
+            </Link>
+          </div>
+          {children}
+          <ConsoleLogger />
+        </PostHogProvider>
       </body>
     </html>
   );
